@@ -123,7 +123,7 @@
             <canvas id="gameCanvas" width="900" height="500"></canvas>
         </div>
         <div class="instructions">
-            Click and drag from the cue ball to aim • Release to shoot • Drag further for more power • Press X for debug mode
+            Click and drag to aim • Release to shoot • Drag further for more power • Q to cancel shot • X for debug mode
         </div>
     </div>
 
@@ -847,7 +847,8 @@
             dragEnd = { x, y };
         });
 
-        canvas.addEventListener('mousemove', (e) => {
+        // Use document-level listeners so dragging works outside canvas
+        document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             
             const rect = canvas.getBoundingClientRect();
@@ -857,7 +858,7 @@
             };
         });
 
-        canvas.addEventListener('mouseup', (e) => {
+        document.addEventListener('mouseup', (e) => {
             if (!isDragging || gameState !== 'aiming') {
                 isDragging = false;
                 return;
@@ -885,15 +886,18 @@
             isDragging = false;
         });
 
-        canvas.addEventListener('mouseleave', () => {
-            isDragging = false;
-        });
-
-        // Debug mode toggle
+        // Debug mode toggle and shot cancel
         document.addEventListener('keydown', (e) => {
             if (e.key === 'x' || e.key === 'X') {
                 debugMode = !debugMode;
                 console.log('Debug mode:', debugMode);
+            }
+            // Q key cancels the current shot
+            if (e.key === 'q' || e.key === 'Q') {
+                if (isDragging) {
+                    isDragging = false;
+                    console.log('Shot cancelled');
+                }
             }
         });
 
