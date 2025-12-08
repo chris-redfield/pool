@@ -567,11 +567,23 @@
             const r = CONFIG.ballRadius;
             const circumference = 2 * Math.PI * r;
             
+            // Pocketing animation: shrink and darken
+            let scale = 1;
+            let darkness = 0;
+            if (ball.pocketing) {
+                // Shrink from 100% to 30%
+                scale = 1 - (ball.pocketProgress * 0.7);
+                // Darken progressively (0 to 0.7)
+                darkness = ball.pocketProgress * 0.7;
+            }
+            
+            const drawRadius = r * scale;
+            
             // Calculate rotation phase (0 to 2π, wrapping)
             const phase = (ball.rotation % circumference) / circumference * Math.PI * 2;
             
             // Offset oscillates with sine, visibility with cosine
-            const offsetAmount = Math.sin(phase) * r * 0.4;
+            const offsetAmount = Math.sin(phase) * drawRadius * 0.4;
             const visibility = Math.cos(phase);  // 1 = front, -1 = back
             
             // Get movement direction (or default to 0,0 when stopped)
@@ -586,27 +598,26 @@
             const textureOffsetX = dirX * offsetAmount;
             const textureOffsetY = dirY * offsetAmount;
             
-            // Ball shadow
+            // Ball shadow (smaller when pocketing)
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.beginPath();
-            ctx.ellipse(ball.x + 2, ball.y + 2, r, r * 0.8, 0, 0, Math.PI * 2);
+            ctx.ellipse(ball.x + 2 * scale, ball.y + 2 * scale, drawRadius, drawRadius * 0.8, 0, 0, Math.PI * 2);
             ctx.fill();
             
             // Ball base color
             ctx.fillStyle = ball.color;
             ctx.beginPath();
-            ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
+            ctx.arc(ball.x, ball.y, drawRadius, 0, Math.PI * 2);
             ctx.fill();
             
-            // Number circle - FIXED SIZE, only position animates
+            // Number circle - FIXED SIZE relative to ball, only position animates
             if (ball.number !== null && visibility > -0.5) {
                 ctx.save();
                 ctx.beginPath();
-                ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
+                ctx.arc(ball.x, ball.y, drawRadius, 0, Math.PI * 2);
                 ctx.clip();
                 
-                // Fixed size - no shrinking!
-                const numberRadius = r * 0.5;
+                const numberRadius = drawRadius * 0.5;
                 
                 const numX = ball.x + textureOffsetX;
                 const numY = ball.y + textureOffsetY;
@@ -616,9 +627,9 @@
                 ctx.arc(numX, numY, numberRadius, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Number text - bigger font
+                // Number text
                 ctx.fillStyle = '#000';
-                ctx.font = `bold ${r * 0.65}px Arial`;
+                ctx.font = `bold ${drawRadius * 0.65}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(ball.number.toString(), numX, numY + 0.5);
@@ -627,16 +638,26 @@
             }
             
             // Glossy highlight (fixed position - doesn't rotate)
-            const glossGradient = ctx.createRadialGradient(
-                ball.x - r * 0.3, ball.y - r * 0.3, 0,
-                ball.x - r * 0.3, ball.y - r * 0.3, r * 0.8
-            );
-            glossGradient.addColorStop(0, 'rgba(255,255,255,0.4)');
-            glossGradient.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = glossGradient;
-            ctx.beginPath();
-            ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
-            ctx.fill();
+            if (!ball.pocketing) {
+                const glossGradient = ctx.createRadialGradient(
+                    ball.x - drawRadius * 0.3, ball.y - drawRadius * 0.3, 0,
+                    ball.x - drawRadius * 0.3, ball.y - drawRadius * 0.3, drawRadius * 0.8
+                );
+                glossGradient.addColorStop(0, 'rgba(255,255,255,0.4)');
+                glossGradient.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = glossGradient;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, drawRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Darkness overlay for pocketing animation
+            if (darkness > 0) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${darkness})`;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, drawRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
         // Draw aiming line and cue stick
@@ -759,15 +780,44 @@
                 checkWallCollision(ball);
             }
             
-            // Pocket detection
+            // Pocket detection - start pocketing animation
+            for (const ball of balls) {
+                if (ball.pocketing) continue; // Skip balls already being pocketed
+                
+                const pocket = checkPocket(ball);
+                if (pocket) {
+                    // Start pocketing animation
+                    ball.pocketing = true;
+                    ball.pocketProgress = 0;
+                    ball.targetPocket = { x: pocket.x, y: pocket.y };
+                }
+            }
+            
+            // Update pocketing animations
+            const POCKET_DURATION = 18; // frames (~0.3 seconds at 60fps)
             for (let i = balls.length - 1; i >= 0; i--) {
-                if (checkPocket(balls[i])) {
+                const ball = balls[i];
+                if (!ball.pocketing) continue;
+                
+                ball.pocketProgress += 1 / POCKET_DURATION;
+                
+                // Pull toward pocket center with acceleration
+                const pullStrength = 0.3 + ball.pocketProgress * 0.5;
+                ball.x += (ball.targetPocket.x - ball.x) * pullStrength;
+                ball.y += (ball.targetPocket.y - ball.y) * pullStrength;
+                
+                // Keep some momentum but slow down
+                ball.vx *= 0.85;
+                ball.vy *= 0.85;
+                
+                // Animation complete - remove ball
+                if (ball.pocketProgress >= 1) {
                     const pocketedBall = balls.splice(i, 1)[0];
                     if (pocketedBall.id !== 0) {
                         pocketedBalls.push(pocketedBall);
                         updatePocketedBallsDisplay();
                     } else {
-                        // Cue ball pocketed - respawn
+                        // Cue ball pocketed - respawn after delay
                         setTimeout(() => {
                             balls.push({
                                 id: 0,
@@ -783,8 +833,9 @@
                 }
             }
             
-            // Check if all balls stopped
-            if (gameState === 'moving' && allStopped) {
+            // Check if all balls stopped (including no pocketing animations in progress)
+            const anyPocketing = balls.some(b => b.pocketing);
+            if (gameState === 'moving' && allStopped && !anyPocketing) {
                 gameState = 'aiming';
                 document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
             }
@@ -792,6 +843,9 @@
 
         // Check ball collision
         function checkBallCollision(b1, b2) {
+            // Skip if either ball is being pocketed
+            if (b1.pocketing || b2.pocketing) return;
+            
             const dx = b2.x - b1.x;
             const dy = b2.y - b1.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -829,6 +883,9 @@
 
         // Check wall collision
         function checkWallCollision(ball) {
+            // Skip if ball is being pocketed
+            if (ball.pocketing) return;
+            
             const r = CONFIG.ballRadius;
             const rail = CONFIG.railSize;
             
@@ -874,18 +931,21 @@
             }
         }
 
-        // Check if ball is in pocket
+        // Check if ball is in pocket - returns pocket or null
         function checkPocket(ball) {
+            // Skip balls that are already being pocketed
+            if (ball.pocketing) return null;
+            
             for (const pocket of pockets) {
                 const dx = ball.x - pocket.x;
                 const dy = ball.y - pocket.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
                 if (dist < CONFIG.pocketRadius) {
-                    return true;
+                    return pocket; // Return the pocket location
                 }
             }
-            return false;
+            return null;
         }
 
         // Update pocketed balls display
