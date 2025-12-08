@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Pool Game</title>
     <style>
         * {
@@ -14,81 +16,109 @@
         body {
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
+            min-height: 100dvh;
             background: #1a1a2e;
             font-family: 'Georgia', serif;
+            overflow-x: hidden;
+            padding: 10px;
         }
 
         .game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
-            overflow: visible;
+            gap: 15px;
+            width: 100%;
+            max-width: 1000px;
+            padding-top: 10px;
         }
 
         .info-bar {
             display: flex;
-            gap: 40px;
+            gap: 20px;
             color: #fff;
-            font-size: 18px;
+            font-size: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            touch-action: manipulation;
         }
 
         .table-container {
             position: relative;
-            padding: 40px;
+            padding: 20px;
             background: linear-gradient(145deg, #8B4513, #654321);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.1);
+            overflow: visible;
+            transform-origin: center center;
+        }
+
+        .canvas-wrapper {
+            position: relative;
             overflow: visible;
         }
 
         #gameCanvas {
             display: block;
             border-radius: 5px;
+            touch-action: none;
         }
 
         #cueCanvas {
             position: absolute;
-            top: -500px;
-            left: -500px;
+            top: 0;
+            left: 0;
             pointer-events: none;
             z-index: 10;
+            touch-action: none;
         }
 
         .instructions {
             color: #aaa;
-            font-size: 14px;
+            font-size: 12px;
             text-align: center;
+            padding: 0 10px;
+            line-height: 1.5;
         }
 
         .pocketed-display {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             color: #fff;
-            font-size: 14px;
+            font-size: 13px;
             background: rgba(0,0,0,0.3);
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 10px;
-            min-height: 50px;
+            min-height: 45px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         #pocketedBallsContainer {
             display: flex;
-            gap: 5px;
+            gap: 4px;
             flex-wrap: wrap;
+            justify-content: center;
         }
 
         .mini-ball {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             color: #000;
             position: relative;
@@ -109,13 +139,99 @@
 
         .mini-ball .number {
             background: #fff;
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1;
+        }
+
+        .zoom-controls {
+            display: none;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .zoom-btn {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .zoom-btn:active {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .zoom-level {
+            color: #aaa;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Mobile styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+                align-items: flex-start;
+            }
+
+            .game-container {
+                gap: 10px;
+                padding-top: 5px;
+            }
+
+            .info-bar {
+                font-size: 14px;
+                gap: 15px;
+            }
+
+            .table-container {
+                padding: 10px;
+                border-radius: 10px;
+            }
+
+            .pocketed-display {
+                font-size: 12px;
+                padding: 6px 12px;
+                min-height: 40px;
+            }
+
+            .mini-ball {
+                width: 20px;
+                height: 20px;
+                font-size: 8px;
+            }
+
+            .mini-ball .number {
+                width: 10px;
+                height: 10px;
+            }
+
+            .zoom-controls {
+                display: flex;
+            }
+
+            .instructions {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .info-bar {
+                font-size: 13px;
+            }
+
+            .table-container {
+                padding: 6px;
+            }
         }
     </style>
 </head>
@@ -129,12 +245,23 @@
             <span>Pocketed: </span>
             <div id="pocketedBallsContainer"></div>
         </div>
-        <div class="table-container">
-            <canvas id="gameCanvas" width="900" height="500"></canvas>
-            <canvas id="cueCanvas" width="1980" height="1580"></canvas>
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomOut">−</button>
+            <span class="zoom-level" id="zoomLevel">100%</span>
+            <button class="zoom-btn" id="zoomIn">+</button>
+            <button class="zoom-btn" id="zoomReset">Reset</button>
+        </div>
+        <div class="table-wrapper" id="tableWrapper">
+            <div class="table-container" id="tableContainer">
+                <div class="canvas-wrapper" id="canvasWrapper">
+                    <canvas id="gameCanvas"></canvas>
+                    <canvas id="cueCanvas"></canvas>
+                </div>
+            </div>
         </div>
         <div class="instructions">
-            Click and drag to aim • Release to shoot • Drag further for more power • Q to cancel shot • X for debug mode
+            <span class="desktop-instructions">Click and drag to aim • Release to shoot • Drag further for more power • Q to cancel • X for debug</span>
+            <span class="mobile-instructions">Touch and drag to aim • Release to shoot • Pinch to zoom</span>
         </div>
     </div>
 
@@ -143,7 +270,9 @@
         const ctx = canvas.getContext('2d');
         const cueCanvas = document.getElementById('cueCanvas');
         const cueCtx = cueCanvas.getContext('2d');
-        const CUE_OFFSET = 540; // 500px overflow + 40px padding
+        const tableContainer = document.getElementById('tableContainer');
+        const tableWrapper = document.getElementById('tableWrapper');
+        const canvasWrapper = document.getElementById('canvasWrapper');
 
         // Configuration
         const CONFIG = {
@@ -157,6 +286,89 @@
             maxPower: 25,
             powerMultiplier: 0.15
         };
+
+        // Responsive scaling
+        let scale = 1;
+        const CUE_OVERFLOW = 500; // How far cue canvas extends beyond game canvas
+
+        function calculateResponsiveSize() {
+            const wrapper = tableWrapper;
+            const containerPadding = window.innerWidth <= 480 ? 6 : (window.innerWidth <= 768 ? 10 : 20);
+            const availableWidth = wrapper.clientWidth - (containerPadding * 2);
+            const availableHeight = window.innerHeight * 0.65;
+            
+            const widthScale = availableWidth / CONFIG.tableWidth;
+            const heightScale = availableHeight / CONFIG.tableHeight;
+            
+            scale = Math.min(widthScale, heightScale, 1);
+            
+            const scaledWidth = CONFIG.tableWidth * scale;
+            const scaledHeight = CONFIG.tableHeight * scale;
+            
+            // Game canvas
+            canvas.width = CONFIG.tableWidth;
+            canvas.height = CONFIG.tableHeight;
+            canvas.style.width = scaledWidth + 'px';
+            canvas.style.height = scaledHeight + 'px';
+            
+            // Canvas wrapper - same size as game canvas for positioning reference
+            canvasWrapper.style.width = scaledWidth + 'px';
+            canvasWrapper.style.height = scaledHeight + 'px';
+            
+            // Cue canvas - extends beyond game canvas
+            // Now positioned relative to canvas-wrapper which has NO padding
+            cueCanvas.width = CONFIG.tableWidth + (CUE_OVERFLOW * 2);
+            cueCanvas.height = CONFIG.tableHeight + (CUE_OVERFLOW * 2);
+            cueCanvas.style.width = (cueCanvas.width * scale) + 'px';
+            cueCanvas.style.height = (cueCanvas.height * scale) + 'px';
+            cueCanvas.style.top = (-CUE_OVERFLOW * scale) + 'px';
+            cueCanvas.style.left = (-CUE_OVERFLOW * scale) + 'px';
+            
+            return scale;
+        }
+
+        // Zoom functionality
+        let currentZoom = 1;
+        const minZoom = 0.5;
+        const maxZoom = 3;
+
+        function setZoom(newZoom) {
+            currentZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+            tableContainer.style.transform = `scale(${currentZoom})`;
+            document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%';
+        }
+
+        // Zoom buttons
+        document.getElementById('zoomIn').addEventListener('click', () => setZoom(currentZoom + 0.2));
+        document.getElementById('zoomOut').addEventListener('click', () => setZoom(currentZoom - 0.2));
+        document.getElementById('zoomReset').addEventListener('click', () => setZoom(1));
+
+        // Pinch-to-zoom handling
+        let initialPinchDistance = 0;
+        let initialZoom = 1;
+
+        function getDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        tableWrapper.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                initialPinchDistance = getDistance(e.touches);
+                initialZoom = currentZoom;
+            }
+        }, { passive: false });
+
+        tableWrapper.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const currentDistance = getDistance(e.touches);
+                const zoomDelta = currentDistance / initialPinchDistance;
+                setZoom(initialZoom * zoomDelta);
+            }
+        }, { passive: false });
 
         // Ball colors for standard 8-ball
         const BALL_COLORS = {
@@ -187,6 +399,7 @@
         let gameState = 'aiming'; // 'aiming', 'moving', 'gameover'
         let pocketedBalls = [];
         let debugMode = false;
+        let activeTouchId = null;
 
         // Initialize pockets
         function initPockets() {
@@ -216,7 +429,6 @@
             const spacing = r * 2.1;
             
             // Triangle formation - 5 rows
-            // Row arrangement matching the image (8-ball in center)
             const triangleOrder = [
                 [1],
                 [11, 6],
@@ -225,7 +437,6 @@
                 [5, 4, 14, 12, 9]
             ];
             
-            let row = 0;
             for (let i = 0; i < triangleOrder.length; i++) {
                 const ballsInRow = triangleOrder[i];
                 const rowOffset = -((ballsInRow.length - 1) / 2) * spacing;
@@ -407,9 +618,8 @@
             ctx.fill();
         }
 
-        // Draw aiming line and cue stick on overlay canvas
+        // Draw aiming line and cue stick
         function drawAimingLine() {
-            // Clear cue canvas
             cueCtx.clearRect(0, 0, cueCanvas.width, cueCanvas.height);
             
             if (!isDragging || gameState !== 'aiming') return;
@@ -422,11 +632,12 @@
             const power = Math.min(Math.sqrt(dx * dx + dy * dy) * CONFIG.powerMultiplier, CONFIG.maxPower);
             const angle = Math.atan2(dy, dx);
             
-            // Offset positions for cue canvas (which includes the brown border area)
-            const ballX = cueBall.x + CUE_OFFSET;
-            const ballY = cueBall.y + CUE_OFFSET;
+            // Offset positions for cue canvas
+            // With canvas-wrapper having no padding, offset is simply CUE_OVERFLOW
+            const ballX = cueBall.x + CUE_OVERFLOW;
+            const ballY = cueBall.y + CUE_OVERFLOW;
             
-            // Draw cue stick on overlay canvas
+            // Draw cue stick
             const stickLength = 200;
             const stickStart = {
                 x: ballX - Math.cos(angle) * (CONFIG.ballRadius + 10 + power * 3),
@@ -446,7 +657,7 @@
             cueCtx.lineTo(stickEnd.x + 3, stickEnd.y + 3);
             cueCtx.stroke();
             
-            // Cue stick body (wood color gradient)
+            // Cue stick body
             cueCtx.strokeStyle = '#d4a056';
             cueCtx.lineWidth = 8;
             cueCtx.beginPath();
@@ -462,7 +673,7 @@
             cueCtx.lineTo(stickStart.x - Math.cos(angle) * 15, stickStart.y - Math.sin(angle) * 15);
             cueCtx.stroke();
             
-            // Aiming line (trajectory preview) - draw on game canvas
+            // Aiming line - on game canvas
             ctx.strokeStyle = 'rgba(255,255,255,0.5)';
             ctx.lineWidth = 1;
             ctx.setLineDash([5, 5]);
@@ -472,7 +683,7 @@
             ctx.stroke();
             ctx.setLineDash([]);
             
-            // Power indicator - draw on game canvas
+            // Power indicator
             const powerPercent = (power / CONFIG.maxPower) * 100;
             ctx.fillStyle = powerPercent > 70 ? '#ff4444' : powerPercent > 40 ? '#ffaa00' : '#44ff44';
             ctx.fillRect(20, CONFIG.tableHeight - 30, powerPercent * 2, 15);
@@ -490,7 +701,6 @@
         function updatePhysics() {
             let allStopped = true;
             
-            // Update ball positions
             for (const ball of balls) {
                 if (Math.abs(ball.vx) > CONFIG.minVelocity || Math.abs(ball.vy) > CONFIG.minVelocity) {
                     allStopped = false;
@@ -498,16 +708,14 @@
                     ball.x += ball.vx;
                     ball.y += ball.vy;
                     
-                    // Apply friction
                     ball.vx *= CONFIG.friction;
                     ball.vy *= CONFIG.friction;
                     
-                    // Stop if very slow
                     if (Math.abs(ball.vx) < CONFIG.minVelocity) ball.vx = 0;
                     if (Math.abs(ball.vy) < CONFIG.minVelocity) ball.vy = 0;
                 }
                 
-                // Hard boundary - absolute limit, ball can never leave canvas
+                // Hard boundary
                 if (ball.x < 0) { ball.x = CONFIG.railSize + CONFIG.ballRadius; ball.vx = Math.abs(ball.vx) * 0.3; }
                 if (ball.x > CONFIG.tableWidth) { ball.x = CONFIG.tableWidth - CONFIG.railSize - CONFIG.ballRadius; ball.vx = -Math.abs(ball.vx) * 0.3; }
                 if (ball.y < 0) { ball.y = CONFIG.railSize + CONFIG.ballRadius; ball.vy = Math.abs(ball.vy) * 0.3; }
@@ -550,16 +758,16 @@
             }
             
             // Check if all balls stopped
-            if (allStopped && gameState === 'moving') {
+            if (gameState === 'moving' && allStopped) {
                 gameState = 'aiming';
                 document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
             }
         }
 
-        // Ball-to-ball collision
-        function checkBallCollision(ball1, ball2) {
-            const dx = ball2.x - ball1.x;
-            const dy = ball2.y - ball1.y;
+        // Check ball collision
+        function checkBallCollision(b1, b2) {
+            const dx = b2.x - b1.x;
+            const dy = b2.y - b1.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             const minDist = CONFIG.ballRadius * 2;
             
@@ -569,90 +777,55 @@
                 const ny = dy / dist;
                 
                 // Relative velocity
-                const dvx = ball1.vx - ball2.vx;
-                const dvy = ball1.vy - ball2.vy;
+                const dvx = b1.vx - b2.vx;
+                const dvy = b1.vy - b2.vy;
                 
                 // Relative velocity along collision normal
                 const dvn = dvx * nx + dvy * ny;
                 
-                // Don't resolve if balls are moving apart
+                // Don't resolve if balls are separating
                 if (dvn > 0) {
-                    // Update velocities (equal mass collision)
-                    ball1.vx -= dvn * nx;
-                    ball1.vy -= dvn * ny;
-                    ball2.vx += dvn * nx;
-                    ball2.vy += dvn * ny;
+                    // Update velocities (equal mass elastic collision)
+                    b1.vx -= dvn * nx;
+                    b1.vy -= dvn * ny;
+                    b2.vx += dvn * nx;
+                    b2.vy += dvn * ny;
                     
-                    // Separate balls to prevent overlap
+                    // Separate balls
                     const overlap = minDist - dist;
-                    ball1.x -= overlap * nx / 2;
-                    ball1.y -= overlap * ny / 2;
-                    ball2.x += overlap * nx / 2;
-                    ball2.y += overlap * ny / 2;
+                    b1.x -= overlap * nx / 2;
+                    b1.y -= overlap * ny / 2;
+                    b2.x += overlap * nx / 2;
+                    b2.y += overlap * ny / 2;
                 }
             }
         }
 
-        // Check if ball is near a pocket (should skip wall collision)
-        function isNearPocket(ball) {
-            for (const pocket of pockets) {
-                const dx = ball.x - pocket.x;
-                const dy = ball.y - pocket.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                // Only skip wall collision if ball is very close to pocket center
-                // and actually heading toward it or inside it
-                if (dist < CONFIG.pocketRadius + 5) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Wall collision
+        // Check wall collision
         function checkWallCollision(ball) {
             const r = CONFIG.ballRadius;
             const rail = CONFIG.railSize;
             
-            // Check if near any pocket - use tighter collision near pockets
-            let nearPocket = false;
-            let closestPocket = null;
-            let closestDist = Infinity;
-            
+            // Check if near a pocket
             for (const pocket of pockets) {
                 const dx = ball.x - pocket.x;
                 const dy = ball.y - pocket.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closestPocket = pocket;
+                
+                if (dist < CONFIG.pocketRadius + 5) {
+                    return; // Skip wall collision near pockets
                 }
+                
                 if (dist < CONFIG.pocketRadius * 1.5) {
-                    nearPocket = true;
+                    const toPocketX = pocket.x - ball.x;
+                    const toPocketY = pocket.y - ball.y;
+                    const dotProduct = ball.vx * toPocketX + ball.vy * toPocketY;
+                    if (dotProduct > 0) {
+                        return; // Moving toward pocket, skip wall collision
+                    }
                 }
             }
             
-            // If very close to pocket, let ball fall in
-            if (closestDist < CONFIG.pocketRadius + 5) {
-                return; // Skip all wall collision, let pocket detection handle it
-            }
-            
-            // If somewhat near pocket, use angled collision to guide ball toward pocket
-            if (nearPocket && closestPocket) {
-                // Calculate direction from ball to pocket
-                const toPocketX = closestPocket.x - ball.x;
-                const toPocketY = closestPocket.y - ball.y;
-                const toPocketDist = Math.sqrt(toPocketX * toPocketX + toPocketY * toPocketY);
-                
-                // If ball is moving away from pocket and hitting wall, bounce normally
-                // If ball is moving toward pocket, let it through
-                const movingTowardPocket = (ball.vx * toPocketX + ball.vy * toPocketY) > 0;
-                
-                if (movingTowardPocket && toPocketDist < CONFIG.pocketRadius * 2) {
-                    return; // Let the ball continue toward pocket
-                }
-            }
-            
-            // Normal wall collisions
             // Left wall
             if (ball.x - r < rail) {
                 ball.x = rail + r;
@@ -675,14 +848,13 @@
             }
         }
 
-        // Pocket detection
+        // Check if ball is in pocket
         function checkPocket(ball) {
             for (const pocket of pockets) {
                 const dx = ball.x - pocket.x;
                 const dy = ball.y - pocket.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                // Ball falls in if its center is within the pocket radius
                 if (dist < CONFIG.pocketRadius) {
                     return true;
                 }
@@ -690,7 +862,7 @@
             return false;
         }
 
-        // Update pocketed balls display (HTML-based, outside table)
+        // Update pocketed balls display
         function updatePocketedBallsDisplay() {
             const container = document.getElementById('pocketedBallsContainer');
             container.innerHTML = '';
@@ -700,18 +872,15 @@
                 ballEl.className = 'mini-ball' + (ball.stripe ? ' stripe' : '');
                 
                 if (ball.stripe) {
-                    // Stripe ball - white background with colored band
                     ballEl.style.background = '#fff';
                     const band = document.createElement('div');
                     band.className = 'stripe-band';
                     band.style.background = ball.color;
                     ballEl.appendChild(band);
                 } else {
-                    // Solid ball
                     ballEl.style.background = ball.color;
                 }
                 
-                // Number circle
                 const numEl = document.createElement('div');
                 numEl.className = 'number';
                 numEl.textContent = ball.number;
@@ -728,89 +897,38 @@
             const r = CONFIG.ballRadius;
             const rail = CONFIG.railSize;
             
-            // Draw wall collision boundaries (red lines)
             ctx.strokeStyle = '#ff0000';
             ctx.lineWidth = 2;
             ctx.setLineDash([]);
             
-            // Left wall boundary
+            // Wall boundaries
             ctx.beginPath();
             ctx.moveTo(rail + r, 0);
             ctx.lineTo(rail + r, CONFIG.tableHeight);
             ctx.stroke();
             
-            // Right wall boundary
             ctx.beginPath();
             ctx.moveTo(CONFIG.tableWidth - rail - r, 0);
             ctx.lineTo(CONFIG.tableWidth - rail - r, CONFIG.tableHeight);
             ctx.stroke();
             
-            // Top wall boundary
             ctx.beginPath();
             ctx.moveTo(0, rail + r);
             ctx.lineTo(CONFIG.tableWidth, rail + r);
             ctx.stroke();
             
-            // Bottom wall boundary
             ctx.beginPath();
             ctx.moveTo(0, CONFIG.tableHeight - rail - r);
             ctx.lineTo(CONFIG.tableWidth, CONFIG.tableHeight - rail - r);
             ctx.stroke();
             
-            // Draw pocket detection zones (yellow circles)
+            // Pocket zones
             ctx.strokeStyle = '#ffff00';
             ctx.lineWidth = 2;
             for (const pocket of pockets) {
-                // Pocket detection zone (where ball actually falls in)
                 ctx.beginPath();
                 ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
                 ctx.stroke();
-                
-                // Inner safe zone - wall collision completely disabled (cyan)
-                ctx.strokeStyle = '#00ffff';
-                ctx.beginPath();
-                ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius + 5, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                // Outer guide zone - wall collision disabled if moving toward pocket (orange dashed)
-                ctx.strokeStyle = '#ff8800';
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius * 1.5, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.strokeStyle = '#ffff00';
-                
-                // Pocket center
-                ctx.fillStyle = '#ffff00';
-                ctx.beginPath();
-                ctx.arc(pocket.x, pocket.y, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Draw ball collision circles (cyan)
-            ctx.strokeStyle = '#00ffff';
-            ctx.lineWidth = 1;
-            for (const ball of balls) {
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, CONFIG.ballRadius, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                // Ball center point
-                ctx.fillStyle = '#00ffff';
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, 2, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Velocity vector (green line)
-                if (ball.vx !== 0 || ball.vy !== 0) {
-                    ctx.strokeStyle = '#00ff00';
-                    ctx.beginPath();
-                    ctx.moveTo(ball.x, ball.y);
-                    ctx.lineTo(ball.x + ball.vx * 10, ball.y + ball.vy * 10);
-                    ctx.stroke();
-                    ctx.strokeStyle = '#00ffff';
-                }
             }
             
             // Debug text
@@ -818,12 +936,6 @@
             ctx.font = '14px monospace';
             ctx.textAlign = 'right';
             ctx.fillText('DEBUG MODE (X to toggle)', CONFIG.tableWidth - 10, CONFIG.tableHeight - 10);
-            ctx.fillText(`Rail size: ${rail}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 30);
-            ctx.fillText(`Ball radius: ${r}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 50);
-            ctx.fillText(`Pocket radius: ${CONFIG.pocketRadius}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 70);
-            ctx.fillText(`Pocket detect: ${CONFIG.pocketRadius}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 90);
-            ctx.fillText(`Inner safe: ${CONFIG.pocketRadius + 5}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 110);
-            ctx.fillText(`Guide zone: ${(CONFIG.pocketRadius * 1.5).toFixed(0)}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 130);
         }
 
         // Main draw function
@@ -847,36 +959,46 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Input handling
+        // Get canvas coordinates from event
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = CONFIG.tableWidth / rect.width;
+            const scaleY = CONFIG.tableHeight / rect.height;
+            
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        // Input handling - Mouse
         canvas.addEventListener('mousedown', (e) => {
             if (gameState !== 'aiming') return;
             
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
+            const coords = getCanvasCoords(e);
             const cueBall = getCueBall();
             if (!cueBall) return;
             
-            const dx = x - cueBall.x;
-            const dy = y - cueBall.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            // Start drag from anywhere, but use cue ball as reference
             isDragging = true;
             dragStart = { x: cueBall.x, y: cueBall.y };
-            dragEnd = { x, y };
+            dragEnd = coords;
         });
 
-        // Use document-level listeners so dragging works outside canvas
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            dragEnd = {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            };
+            dragEnd = getCanvasCoords(e);
         });
 
         document.addEventListener('mouseup', (e) => {
@@ -885,11 +1007,57 @@
                 return;
             }
             
+            shoot();
+            isDragging = false;
+        });
+
+        // Input handling - Touch
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            if (gameState !== 'aiming') return;
+            
+            e.preventDefault();
+            
+            const coords = getCanvasCoords(e);
             const cueBall = getCueBall();
-            if (!cueBall) {
+            if (!cueBall) return;
+            
+            activeTouchId = e.touches[0].identifier;
+            isDragging = true;
+            dragStart = { x: cueBall.x, y: cueBall.y };
+            dragEnd = coords;
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            if (e.touches[0].identifier !== activeTouchId) return;
+            
+            e.preventDefault();
+            dragEnd = getCanvasCoords(e);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!isDragging || gameState !== 'aiming') {
                 isDragging = false;
+                activeTouchId = null;
                 return;
             }
+            
+            e.preventDefault();
+            shoot();
+            isDragging = false;
+            activeTouchId = null;
+        }, { passive: false });
+
+        canvas.addEventListener('touchcancel', (e) => {
+            isDragging = false;
+            activeTouchId = null;
+        });
+
+        // Shoot function
+        function shoot() {
+            const cueBall = getCueBall();
+            if (!cueBall) return;
             
             const dx = dragStart.x - dragEnd.x;
             const dy = dragStart.y - dragEnd.y;
@@ -903,28 +1071,43 @@
                 gameState = 'moving';
                 document.getElementById('status').textContent = 'Balls in motion...';
             }
-            
-            isDragging = false;
-        });
+        }
 
-        // Debug mode toggle and shot cancel
+        // Keyboard controls
         document.addEventListener('keydown', (e) => {
             if (e.key === 'x' || e.key === 'X') {
                 debugMode = !debugMode;
-                console.log('Debug mode:', debugMode);
             }
-            // Q key cancels the current shot
             if (e.key === 'q' || e.key === 'Q') {
                 if (isDragging) {
                     isDragging = false;
-                    console.log('Shot cancelled');
                 }
             }
         });
 
-        // Initialize and start game
+        // Responsive resize
+        function handleResize() {
+            calculateResponsiveSize();
+        }
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(handleResize, 100);
+        });
+
+        // Show appropriate instructions
+        function updateInstructions() {
+            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+            document.querySelector('.desktop-instructions').style.display = isMobile ? 'none' : 'inline';
+            document.querySelector('.mobile-instructions').style.display = isMobile ? 'inline' : 'none';
+        }
+
+        // Initialize
         initPockets();
         initBalls();
+        calculateResponsiveSize();
+        updateInstructions();
+        window.addEventListener('resize', updateInstructions);
         gameLoop();
     </script>
 </body>
