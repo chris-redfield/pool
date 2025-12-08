@@ -381,13 +381,13 @@
             6: { color: '#006400', stripe: false, number: 6 },     // Green
             7: { color: '#8B0000', stripe: false, number: 7 },     // Maroon
             8: { color: '#000000', stripe: false, number: 8 },     // Black
-            9: { color: '#FFD700', stripe: true, number: 9 },      // Yellow stripe
-            10: { color: '#0000CD', stripe: true, number: 10 },    // Blue stripe
-            11: { color: '#FF0000', stripe: true, number: 11 },    // Red stripe
-            12: { color: '#4B0082', stripe: true, number: 12 },    // Purple stripe
-            13: { color: '#FF4500', stripe: true, number: 13 },    // Orange stripe
-            14: { color: '#006400', stripe: true, number: 14 },    // Green stripe
-            15: { color: '#8B0000', stripe: true, number: 15 }     // Maroon stripe
+            9: { color: '#FFF59D', stripe: false, number: 9 },     // Pastel Yellow
+            10: { color: '#90CAF9', stripe: false, number: 10 },   // Pastel Blue
+            11: { color: '#EF9A9A', stripe: false, number: 11 },   // Pastel Red/Pink
+            12: { color: '#CE93D8', stripe: false, number: 12 },   // Pastel Purple/Lavender
+            13: { color: '#FFCC80', stripe: false, number: 13 },   // Pastel Orange/Peach
+            14: { color: '#A5D6A7', stripe: false, number: 14 },   // Pastel Green/Mint
+            15: { color: '#E57373', stripe: false, number: 15 }    // Pastel Maroon/Rose
         };
 
         // Game state
@@ -449,6 +449,7 @@
                         y: startY + rowOffset + j * spacing,
                         vx: 0,
                         vy: 0,
+                        rotation: 0,  // Total rotation (based on distance traveled)
                         ...BALL_COLORS[ballNum]
                     });
                 }
@@ -461,6 +462,7 @@
                 y: CONFIG.tableHeight / 2,
                 vx: 0,
                 vy: 0,
+                rotation: 0,
                 ...BALL_COLORS[0]
             });
         }
@@ -563,6 +565,26 @@
         // Draw a ball
         function drawBall(ball) {
             const r = CONFIG.ballRadius;
+            const circumference = 2 * Math.PI * r;
+            
+            // Calculate rotation phase (0 to 2π, wrapping)
+            const phase = (ball.rotation % circumference) / circumference * Math.PI * 2;
+            
+            // Offset oscillates with sine, visibility with cosine
+            const offsetAmount = Math.sin(phase) * r * 0.4;
+            const visibility = Math.cos(phase);  // 1 = front, -1 = back
+            
+            // Get movement direction (or default to 0,0 when stopped)
+            const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+            let dirX = 0, dirY = 0;
+            if (speed > 0.1) {
+                dirX = ball.vx / speed;
+                dirY = ball.vy / speed;
+            }
+            
+            // Texture offset in movement direction
+            const textureOffsetX = dirX * offsetAmount;
+            const textureOffsetY = dirY * offsetAmount;
             
             // Ball shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -576,36 +598,35 @@
             ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
             ctx.fill();
             
-            // Stripe for striped balls
-            if (ball.stripe) {
-                ctx.fillStyle = '#FFFFFF';
+            // Number circle - FIXED SIZE, only position animates
+            if (ball.number !== null && visibility > -0.5) {
+                ctx.save();
                 ctx.beginPath();
                 ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.clip();
                 
-                // Draw colored stripe
-                ctx.fillStyle = ball.color;
-                ctx.beginPath();
-                ctx.ellipse(ball.x, ball.y, r, r * 0.5, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Number circle (white background for solids, on the stripe for stripes)
-            if (ball.number !== null) {
+                // Fixed size - no shrinking!
+                const numberRadius = r * 0.5;
+                
+                const numX = ball.x + textureOffsetX;
+                const numY = ball.y + textureOffsetY;
+                
                 ctx.fillStyle = '#FFFFFF';
                 ctx.beginPath();
-                ctx.arc(ball.x, ball.y, r * 0.5, 0, Math.PI * 2);
+                ctx.arc(numX, numY, numberRadius, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Number text
+                // Number text - bigger font
                 ctx.fillStyle = '#000';
-                ctx.font = `bold ${r * 0.7}px Arial`;
+                ctx.font = `bold ${r * 0.65}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(ball.number.toString(), ball.x, ball.y + 1);
+                ctx.fillText(ball.number.toString(), numX, numY + 0.5);
+                
+                ctx.restore();
             }
             
-            // Glossy highlight
+            // Glossy highlight (fixed position - doesn't rotate)
             const glossGradient = ctx.createRadialGradient(
                 ball.x - r * 0.3, ball.y - r * 0.3, 0,
                 ball.x - r * 0.3, ball.y - r * 0.3, r * 0.8
@@ -708,6 +729,10 @@
                     ball.x += ball.vx;
                     ball.y += ball.vy;
                     
+                    // Update rotation based on distance traveled
+                    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+                    ball.rotation += speed;
+                    
                     ball.vx *= CONFIG.friction;
                     ball.vy *= CONFIG.friction;
                     
@@ -750,6 +775,7 @@
                                 y: CONFIG.tableHeight / 2,
                                 vx: 0,
                                 vy: 0,
+                                rotation: 0,
                                 ...BALL_COLORS[0]
                             });
                         }, 500);
@@ -872,11 +898,8 @@
                 ballEl.className = 'mini-ball' + (ball.stripe ? ' stripe' : '');
                 
                 if (ball.stripe) {
-                    ballEl.style.background = '#fff';
-                    const band = document.createElement('div');
-                    band.className = 'stripe-band';
-                    band.style.background = ball.color;
-                    ballEl.appendChild(band);
+                    // No more stripes - just show the color (this branch kept for safety)
+                    ballEl.style.background = ball.color;
                 } else {
                     ballEl.style.background = ball.color;
                 }
@@ -929,6 +952,56 @@
                 ctx.beginPath();
                 ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
                 ctx.stroke();
+                
+                // Inner safe zone (cyan)
+                ctx.strokeStyle = '#00ffff';
+                ctx.beginPath();
+                ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Outer guide zone (orange dashed)
+                ctx.strokeStyle = '#ff8800';
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius * 1.5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Pocket center
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(pocket.x, pocket.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#ffff00';
+            }
+            
+            // Ball collision circles and velocity vectors
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 1;
+            for (const ball of balls) {
+                // Ball collision boundary
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, CONFIG.ballRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Ball center point
+                ctx.fillStyle = '#00ffff';
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Velocity vector (green line)
+                if (ball.vx !== 0 || ball.vy !== 0) {
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(ball.x, ball.y);
+                    ctx.lineTo(ball.x + ball.vx * 10, ball.y + ball.vy * 10);
+                    ctx.stroke();
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 1;
+                }
             }
             
             // Debug text
@@ -936,6 +1009,9 @@
             ctx.font = '14px monospace';
             ctx.textAlign = 'right';
             ctx.fillText('DEBUG MODE (X to toggle)', CONFIG.tableWidth - 10, CONFIG.tableHeight - 10);
+            ctx.fillText(`Rail size: ${rail}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 30);
+            ctx.fillText(`Ball radius: ${r}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 50);
+            ctx.fillText(`Pocket radius: ${CONFIG.pocketRadius}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 70);
         }
 
         // Main draw function
