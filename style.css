@@ -224,3 +224,222 @@ body {
         padding: 6px;
     }
 }
+
+/* Menu Styles */
+.menu-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.menu-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #1a1a2e;
+}
+
+#menuCanvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0.6;
+    filter: blur(1px);
+}
+
+.menu-overlay {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        45deg,
+        rgba(26, 26, 46, 0.5) 0%,
+        rgba(26, 26, 46, 0.3) 50%,
+        rgba(26, 26, 46, 0.5) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-content {
+    text-align: center;
+    color: #fff;
+    z-index: 10;
+}
+
+.game-title {
+    font-family: 'Georgia', serif;
+    font-size: 4rem;
+    font-weight: bold;
+    margin: 0 0 60px 0;
+    text-shadow: 
+        2px 2px 4px rgba(0,0,0,0.8),
+        0 0 20px rgba(255,255,255,0.2);
+    background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+}
+
+.menu-btn {
+    background: linear-gradient(145deg, 
+        rgba(139, 69, 19, 0.9), 
+        rgba(101, 67, 33, 0.9)
+    );
+    border: 3px solid rgba(255, 215, 0, 0.3);
+    border-radius: 20px;
+    padding: 25px 40px;
+    color: #fff;
+    font-family: 'Georgia', serif;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 280px;
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 8px 25px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.menu-btn:hover {
+    transform: translateY(-5px) scale(1.05);
+    border-color: rgba(255, 215, 0, 0.8);
+    box-shadow: 
+        0 15px 35px rgba(0,0,0,0.4),
+        0 0 30px rgba(255, 215, 0, 0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.menu-btn:active {
+    transform: translateY(-2px) scale(1.02);
+}
+
+.menu-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s;
+}
+
+.menu-btn:hover::before {
+    left: 100%;
+}
+
+.btn-icon {
+    display: block;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+}
+
+.btn-text {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.btn-subtitle {
+    display: block;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-style: italic;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+}
+
+.back-btn {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.back-btn:hover {
+    background: rgba(0,0,0,0.5);
+    border-color: rgba(255,255,255,0.5);
+}
+
+/* Mobile menu adjustments */
+@media (max-width: 768px) {
+    .game-title {
+        font-size: 3rem;
+        margin-bottom: 40px;
+    }
+    
+    .menu-btn {
+        min-width: 250px;
+        padding: 20px 30px;
+    }
+    
+    .btn-icon {
+        font-size: 2rem;
+    }
+    
+    .btn-text {
+        font-size: 1.2rem;
+    }
+    
+    .menu-buttons {
+        gap: 25px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 2.5rem;
+        margin-bottom: 30px;
+    }
+    
+    .menu-btn {
+        min-width: 220px;
+        padding: 18px 25px;
+    }
+    
+    .btn-icon {
+        font-size: 1.8rem;
+    }
+    
+    .btn-text {
+        font-size: 1.1rem;
+    }
+    
+    .btn-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .menu-buttons {
+        gap: 20px;
+    }
+}

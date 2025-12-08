@@ -9,10 +9,36 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
+    <!-- Main Menu -->
+    <div class="menu-container" id="menuContainer">
+        <div class="menu-background">
+            <canvas id="menuCanvas"></canvas>
+        </div>
+        <div class="menu-overlay">
+            <div class="menu-content">
+                <h1 class="game-title">Pool Game</h1>
+                <div class="menu-buttons">
+                    <button class="menu-btn" id="twoPlayerBtn">
+                        <span class="btn-icon">🎱</span>
+                        <span class="btn-text">2 Players</span>
+                        <span class="btn-subtitle">Play with a friend</span>
+                    </button>
+                    <button class="menu-btn" id="practiceBtn">
+                        <span class="btn-icon">🎯</span>
+                        <span class="btn-text">Practice</span>
+                        <span class="btn-subtitle">Perfect your shots</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div class="game-container" id="gameContainer" style="display: none;">
         <div class="info-bar">
-            <span>Player 1</span>
+            <span id="currentPlayer">Player 1</span>
             <span id="status">Your turn - Aim and shoot!</span>
+            <button class="back-btn" id="backToMenu">← Menu</button>
         </div>
         <div class="pocketed-display">
             <span>Pocketed: </span>
@@ -36,7 +62,7 @@
             <span class="desktop-instructions">Click and drag to aim • Release to shoot • Drag further for more power • Q to cancel • X for debug</span>
             <span class="mobile-instructions">Touch and drag to aim • Release to shoot • Pinch to zoom</span>
         </div>
-    </div>
+    </div></body>
 
     <script src="game.js"></script>
 </body>

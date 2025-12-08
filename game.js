@@ -1,3 +1,12 @@
+// Menu elements
+const menuContainer = document.getElementById('menuContainer');
+const gameContainer = document.getElementById('gameContainer');
+const menuCanvas = document.getElementById('menuCanvas');
+const twoPlayerBtn = document.getElementById('twoPlayerBtn');
+const practiceBtn = document.getElementById('practiceBtn');
+const backToMenuBtn = document.getElementById('backToMenu');
+
+// Game elements
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const cueCanvas = document.getElementById('cueCanvas');
@@ -129,10 +138,279 @@ let pockets = [];
 let isDragging = false;
 let dragStart = { x: 0, y: 0 };
 let dragEnd = { x: 0, y: 0 };
-let gameState = 'aiming'; // 'aiming', 'moving', 'gameover'
+let gameState = 'menu'; // 'menu', 'aiming', 'moving', 'gameover'
+let gameMode = 'practice'; // 'practice', 'twoPlayer'
+let currentPlayerNumber = 1;
 let pocketedBalls = [];
 let debugMode = false;
 let activeTouchId = null;
+let gameInitialized = false;
+
+// Menu canvas context
+let menuCtx = null;
+
+// Menu Functions
+function initMenuCanvas() {
+    if (!menuCtx) {
+        menuCtx = menuCanvas.getContext('2d');
+    }
+    
+    // Set menu canvas size
+    menuCanvas.width = CONFIG.tableWidth;
+    menuCanvas.height = CONFIG.tableHeight;
+    
+    // Calculate responsive size for menu
+    const containerWidth = window.innerWidth * 0.9;
+    const containerHeight = window.innerHeight * 0.9;
+    const widthScale = containerWidth / CONFIG.tableWidth;
+    const heightScale = containerHeight / CONFIG.tableHeight;
+    const menuScale = Math.min(widthScale, heightScale, 1);
+    
+    const scaledWidth = CONFIG.tableWidth * menuScale;
+    const scaledHeight = CONFIG.tableHeight * menuScale;
+    
+    menuCanvas.style.width = scaledWidth + 'px';
+    menuCanvas.style.height = scaledHeight + 'px';
+    
+    drawMenuBackground();
+}
+
+function drawMenuBackground() {
+    if (!menuCtx) return;
+    
+    // First draw the wooden table container (like the CSS .table-container background)
+    const borderPadding = 20;
+    const gradient = menuCtx.createLinearGradient(0, 0, CONFIG.tableWidth, CONFIG.tableHeight);
+    gradient.addColorStop(0, '#8B4513');
+    gradient.addColorStop(0.5, '#654321');
+    gradient.addColorStop(1, '#8B4513');
+    
+    // Fill entire canvas with wooden background
+    menuCtx.fillStyle = gradient;
+    menuCtx.fillRect(0, 0, CONFIG.tableWidth, CONFIG.tableHeight);
+    
+    // Add inner shadow/highlight for depth
+    const shadowGradient = menuCtx.createLinearGradient(borderPadding, borderPadding, CONFIG.tableWidth - borderPadding, CONFIG.tableHeight - borderPadding);
+    shadowGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
+    shadowGradient.addColorStop(0.5, 'rgba(0,0,0,0.1)');
+    shadowGradient.addColorStop(1, 'rgba(0,0,0,0.2)');
+    menuCtx.fillStyle = shadowGradient;
+    menuCtx.fillRect(borderPadding/2, borderPadding/2, CONFIG.tableWidth - borderPadding, CONFIG.tableHeight - borderPadding);
+    
+    // Now draw the actual playing surface
+    const r = CONFIG.railSize;
+    
+    // Table felt (green) - this should fill the inner area
+    menuCtx.fillStyle = '#0d7a3e';
+    menuCtx.fillRect(borderPadding, borderPadding, CONFIG.tableWidth - borderPadding*2, CONFIG.tableHeight - borderPadding*2);
+    
+    // Add felt texture gradient
+    const feltGradient = menuCtx.createRadialGradient(
+        CONFIG.tableWidth / 2, CONFIG.tableHeight / 2, 0,
+        CONFIG.tableWidth / 2, CONFIG.tableHeight / 2, CONFIG.tableWidth / 2
+    );
+    feltGradient.addColorStop(0, 'rgba(20, 140, 70, 0.3)');
+    feltGradient.addColorStop(1, 'rgba(0, 80, 40, 0.3)');
+    menuCtx.fillStyle = feltGradient;
+    menuCtx.fillRect(borderPadding, borderPadding, CONFIG.tableWidth - borderPadding*2, CONFIG.tableHeight - borderPadding*2);
+    
+    // Rails (cushions) - adjusted for border
+    const railOffset = borderPadding;
+    menuCtx.fillStyle = '#0a5c2e';
+    // Top rail
+    menuCtx.fillRect(railOffset + r + CONFIG.pocketRadius, railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    menuCtx.fillRect(CONFIG.tableWidth / 2 + CONFIG.pocketRadius * 0.5, railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    // Bottom rail
+    menuCtx.fillRect(railOffset + r + CONFIG.pocketRadius, CONFIG.tableHeight - r - railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    menuCtx.fillRect(CONFIG.tableWidth / 2 + CONFIG.pocketRadius * 0.5, CONFIG.tableHeight - r - railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    // Left rail
+    menuCtx.fillRect(railOffset, railOffset + r + CONFIG.pocketRadius, r, CONFIG.tableHeight - 2 * r - CONFIG.pocketRadius * 2 - borderPadding * 2);
+    // Right rail
+    menuCtx.fillRect(CONFIG.tableWidth - r - railOffset, railOffset + r + CONFIG.pocketRadius, r, CONFIG.tableHeight - 2 * r - CONFIG.pocketRadius * 2 - borderPadding * 2);
+    
+    // Draw pockets - adjusted for border
+    menuCtx.fillStyle = '#000';
+    const tempPockets = [
+        { x: railOffset + r - 5, y: railOffset + r - 5 },                    // Top-left
+        { x: CONFIG.tableWidth / 2, y: railOffset + r - 10 },   // Top-middle
+        { x: CONFIG.tableWidth - r + 5 - railOffset, y: railOffset + r - 5 }, // Top-right
+        { x: railOffset + r - 5, y: CONFIG.tableHeight - r + 5 - railOffset }, // Bottom-left
+        { x: CONFIG.tableWidth / 2, y: CONFIG.tableHeight - r + 10 - railOffset }, // Bottom-middle
+        { x: CONFIG.tableWidth - r + 5 - railOffset, y: CONFIG.tableHeight - r + 5 - railOffset } // Bottom-right
+    ];
+    
+    for (const pocket of tempPockets) {
+        menuCtx.beginPath();
+        menuCtx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
+        menuCtx.fill();
+        
+        // Pocket inner shadow
+        const shadowGradient = menuCtx.createRadialGradient(
+            pocket.x, pocket.y, CONFIG.pocketRadius * 0.5,
+            pocket.x, pocket.y, CONFIG.pocketRadius
+        );
+        shadowGradient.addColorStop(0, 'rgba(0,0,0,0.8)');
+        shadowGradient.addColorStop(1, 'rgba(30,30,30,1)');
+        menuCtx.fillStyle = shadowGradient;
+        menuCtx.beginPath();
+        menuCtx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
+        menuCtx.fill();
+        menuCtx.fillStyle = '#000';
+    }
+
+    // Diamond markers on rails - adjusted for border
+    menuCtx.fillStyle = '#FFF';
+    const diamonds = [0.25, 0.5, 0.75];
+    for (const d of diamonds) {
+        // Top & Bottom diamonds
+        if (d !== 0.5) {
+            menuCtx.beginPath();
+            menuCtx.arc(borderPadding + (CONFIG.tableWidth - borderPadding*2) * d, railOffset + r / 2, 3, 0, Math.PI * 2);
+            menuCtx.fill();
+            menuCtx.beginPath();
+            menuCtx.arc(borderPadding + (CONFIG.tableWidth - borderPadding*2) * d, CONFIG.tableHeight - r / 2 - railOffset, 3, 0, Math.PI * 2);
+            menuCtx.fill();
+        }
+    }
+    // Side diamonds
+    for (const d of [0.25, 0.5, 0.75]) {
+        menuCtx.beginPath();
+        menuCtx.arc(railOffset + r / 2, borderPadding + (CONFIG.tableHeight - borderPadding*2) * d, 3, 0, Math.PI * 2);
+        menuCtx.fill();
+        menuCtx.beginPath();
+        menuCtx.arc(CONFIG.tableWidth - r / 2 - railOffset, borderPadding + (CONFIG.tableHeight - borderPadding*2) * d, 3, 0, Math.PI * 2);
+        menuCtx.fill();
+    }
+    
+    // Draw some decorative balls
+    drawMenuBalls();
+}
+
+function drawMenuBalls() {
+    if (!menuCtx) return;
+    
+    const borderPadding = 20;
+    const playAreaWidth = CONFIG.tableWidth - borderPadding * 2;
+    const playAreaHeight = CONFIG.tableHeight - borderPadding * 2;
+    
+    // Draw some static balls for decoration - positioned within the play area
+    const decorativeBalls = [
+        { x: borderPadding + playAreaWidth * 0.2, y: borderPadding + playAreaHeight * 0.3, color: '#FFD700', number: 1 },
+        { x: borderPadding + playAreaWidth * 0.8, y: borderPadding + playAreaHeight * 0.7, color: '#0000CD', number: 2 },
+        { x: borderPadding + playAreaWidth * 0.3, y: borderPadding + playAreaHeight * 0.8, color: '#FF0000', number: 3 },
+        { x: borderPadding + playAreaWidth * 0.7, y: borderPadding + playAreaHeight * 0.2, color: '#000000', number: 8 },
+        { x: borderPadding + playAreaWidth * 0.5, y: borderPadding + playAreaHeight * 0.4, color: '#FFFFFF', number: null }
+    ];
+    
+    decorativeBalls.forEach(ball => {
+        const r = CONFIG.ballRadius;
+        
+        // Ball shadow
+        menuCtx.fillStyle = 'rgba(0,0,0,0.3)';
+        menuCtx.beginPath();
+        menuCtx.ellipse(ball.x + 2, ball.y + 2, r, r * 0.8, 0, 0, Math.PI * 2);
+        menuCtx.fill();
+        
+        // Ball base
+        menuCtx.fillStyle = ball.color;
+        menuCtx.beginPath();
+        menuCtx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
+        menuCtx.fill();
+        
+        // Number circle
+        if (ball.number !== null) {
+            const numberRadius = r * 0.5;
+            menuCtx.fillStyle = '#FFFFFF';
+            menuCtx.beginPath();
+            menuCtx.arc(ball.x, ball.y, numberRadius, 0, Math.PI * 2);
+            menuCtx.fill();
+            
+            // Number text
+            menuCtx.fillStyle = '#000';
+            menuCtx.font = `bold ${r * 0.65}px Arial`;
+            menuCtx.textAlign = 'center';
+            menuCtx.textBaseline = 'middle';
+            menuCtx.fillText(ball.number.toString(), ball.x, ball.y + 0.5);
+        }
+        
+        // Glossy highlight
+        const glossGradient = menuCtx.createRadialGradient(
+            ball.x - r * 0.3, ball.y - r * 0.3, 0,
+            ball.x - r * 0.3, ball.y - r * 0.3, r * 0.8
+        );
+        glossGradient.addColorStop(0, 'rgba(255,255,255,0.4)');
+        glossGradient.addColorStop(1, 'rgba(255,255,255,0)');
+        menuCtx.fillStyle = glossGradient;
+        menuCtx.beginPath();
+        menuCtx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
+        menuCtx.fill();
+    });
+}
+
+function showMenu() {
+    gameState = 'menu';
+    menuContainer.style.display = 'block';
+    gameContainer.style.display = 'none';
+    initMenuCanvas();
+}
+
+function hideMenu() {
+    menuContainer.style.display = 'none';
+    gameContainer.style.display = 'flex';
+}
+
+function startGame(mode) {
+    gameMode = mode;
+    gameState = 'aiming';
+    currentPlayerNumber = 1;
+    hideMenu();
+    
+    if (!gameInitialized) {
+        initializeGame();
+        gameInitialized = true;
+    } else {
+        resetGame();
+    }
+    
+    updatePlayerDisplay();
+}
+
+function resetGame() {
+    initBalls();
+    updatePocketedBallsDisplay();
+    gameState = 'aiming';
+    currentPlayerNumber = 1;
+    document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
+}
+
+function updatePlayerDisplay() {
+    const playerElement = document.getElementById('currentPlayer');
+    if (gameMode === 'practice') {
+        playerElement.textContent = 'Practice Mode';
+    } else {
+        playerElement.textContent = `Player ${currentPlayerNumber}`;
+    }
+}
+
+function switchPlayer() {
+    if (gameMode === 'twoPlayer') {
+        currentPlayerNumber = currentPlayerNumber === 1 ? 2 : 1;
+        updatePlayerDisplay();
+    }
+}
+
+function updateStatusMessage() {
+    if (gameMode === 'practice') {
+        document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
+    } else {
+        document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
+    }
+}
+
+// Menu event listeners
+twoPlayerBtn.addEventListener('click', () => startGame('twoPlayer'));
+practiceBtn.addEventListener('click', () => startGame('practice'));
+backToMenuBtn.addEventListener('click', showMenu);
 
 // Initialize pockets
 function initPockets() {
@@ -592,7 +870,13 @@ function updatePhysics() {
     const anyPocketing = balls.some(b => b.pocketing);
     if (gameState === 'moving' && allStopped && !anyPocketing) {
         gameState = 'aiming';
-        document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
+        
+        // Switch player in 2-player mode
+        if (gameMode === 'twoPlayer') {
+            switchPlayer();
+        }
+        
+        updateStatusMessage();
     }
 }
 
@@ -845,8 +1129,10 @@ function draw() {
 
 // Game loop
 function gameLoop() {
-    updatePhysics();
-    draw();
+    if (gameState !== 'menu') {
+        updatePhysics();
+        draw();
+    }
     requestAnimationFrame(gameLoop);
 }
 
@@ -997,10 +1283,22 @@ function updateInstructions() {
     document.querySelector('.mobile-instructions').style.display = isMobile ? 'inline' : 'none';
 }
 
+// Game initialization function
+function initializeGame() {
+    initPockets();
+    initBalls();
+    calculateResponsiveSize();
+    updateInstructions();
+    window.addEventListener('resize', updateInstructions);
+    window.addEventListener('resize', () => {
+        if (gameState === 'menu') {
+            initMenuCanvas();
+        } else {
+            handleResize();
+        }
+    });
+}
+
 // Initialize
-initPockets();
-initBalls();
-calculateResponsiveSize();
-updateInstructions();
-window.addEventListener('resize', updateInstructions);
+showMenu(); // Start with menu
 gameLoop();
