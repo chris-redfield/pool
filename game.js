@@ -5,6 +5,11 @@ const menuCanvas = document.getElementById('menuCanvas');
 const twoPlayerBtn = document.getElementById('twoPlayerBtn');
 const practiceBtn = document.getElementById('practiceBtn');
 const backToMenuBtn = document.getElementById('backToMenu');
+const standardTableBtn = document.getElementById('standardTableBtn');
+const elongatedTableBtn = document.getElementById('elongatedTableBtn');
+
+// Table selection
+let selectedTable = 'standard'; // 'standard' or 'elongated'
 
 // Game elements
 const canvas = document.getElementById('gameCanvas');
@@ -29,43 +34,49 @@ const CONFIG = {
     deadZone: 35  // Distance before power starts building (angle-only zone)
 };
 
+// Get current table configuration
+function getCurrentConfig() {
+    return selectedTable === 'elongated' ? TABLE2_CONFIG : CONFIG;
+}
+
 // Responsive scaling
 let scale = 1;
 const CUE_OVERFLOW = 500; // How far cue canvas extends beyond game canvas
 
 function calculateResponsiveSize() {
+    const currentConfig = getCurrentConfig();
     const wrapper = tableWrapper;
     const containerPadding = window.innerWidth <= 480 ? 6 : (window.innerWidth <= 768 ? 10 : 20);
     const availableWidth = wrapper.clientWidth - (containerPadding * 2);
     const availableHeight = window.innerHeight * 0.65;
-    
-    const widthScale = availableWidth / CONFIG.tableWidth;
-    const heightScale = availableHeight / CONFIG.tableHeight;
-    
+
+    const widthScale = availableWidth / currentConfig.tableWidth;
+    const heightScale = availableHeight / currentConfig.tableHeight;
+
     scale = Math.min(widthScale, heightScale, 1);
-    
-    const scaledWidth = CONFIG.tableWidth * scale;
-    const scaledHeight = CONFIG.tableHeight * scale;
-    
+
+    const scaledWidth = currentConfig.tableWidth * scale;
+    const scaledHeight = currentConfig.tableHeight * scale;
+
     // Game canvas
-    canvas.width = CONFIG.tableWidth;
-    canvas.height = CONFIG.tableHeight;
+    canvas.width = currentConfig.tableWidth;
+    canvas.height = currentConfig.tableHeight;
     canvas.style.width = scaledWidth + 'px';
     canvas.style.height = scaledHeight + 'px';
-    
+
     // Canvas wrapper - same size as game canvas for positioning reference
     canvasWrapper.style.width = scaledWidth + 'px';
     canvasWrapper.style.height = scaledHeight + 'px';
-    
+
     // Cue canvas - extends beyond game canvas
     // Now positioned relative to canvas-wrapper which has NO padding
-    cueCanvas.width = CONFIG.tableWidth + (CUE_OVERFLOW * 2);
-    cueCanvas.height = CONFIG.tableHeight + (CUE_OVERFLOW * 2);
+    cueCanvas.width = currentConfig.tableWidth + (CUE_OVERFLOW * 2);
+    cueCanvas.height = currentConfig.tableHeight + (CUE_OVERFLOW * 2);
     cueCanvas.style.width = (cueCanvas.width * scale) + 'px';
     cueCanvas.style.height = (cueCanvas.height * scale) + 'px';
     cueCanvas.style.top = (-CUE_OVERFLOW * scale) + 'px';
     cueCanvas.style.left = (-CUE_OVERFLOW * scale) + 'px';
-    
+
     return scale;
 }
 
@@ -151,109 +162,119 @@ let menuCtx = null;
 
 // Menu Functions
 function initMenuCanvas() {
+    const currentConfig = getCurrentConfig();
+
     if (!menuCtx) {
         menuCtx = menuCanvas.getContext('2d');
     }
-    
+
     // Set menu canvas size
-    menuCanvas.width = CONFIG.tableWidth;
-    menuCanvas.height = CONFIG.tableHeight;
-    
+    menuCanvas.width = currentConfig.tableWidth;
+    menuCanvas.height = currentConfig.tableHeight;
+
     // Calculate responsive size for menu
     const containerWidth = window.innerWidth * 0.9;
     const containerHeight = window.innerHeight * 0.9;
-    const widthScale = containerWidth / CONFIG.tableWidth;
-    const heightScale = containerHeight / CONFIG.tableHeight;
+    const widthScale = containerWidth / currentConfig.tableWidth;
+    const heightScale = containerHeight / currentConfig.tableHeight;
     const menuScale = Math.min(widthScale, heightScale, 1);
-    
-    const scaledWidth = CONFIG.tableWidth * menuScale;
-    const scaledHeight = CONFIG.tableHeight * menuScale;
-    
+
+    const scaledWidth = currentConfig.tableWidth * menuScale;
+    const scaledHeight = currentConfig.tableHeight * menuScale;
+
     menuCanvas.style.width = scaledWidth + 'px';
     menuCanvas.style.height = scaledHeight + 'px';
-    
+
     drawMenuBackground();
 }
 
 function drawMenuBackground() {
     if (!menuCtx) return;
-    
+
+    const currentConfig = getCurrentConfig();
+
+    // Use table-specific drawing function
+    if (selectedTable === 'elongated') {
+        drawMenuBackgroundTable2(menuCtx, currentConfig);
+        return;
+    }
+
     // First draw the wooden table container (like the CSS .table-container background)
     const borderPadding = 20;
-    const gradient = menuCtx.createLinearGradient(0, 0, CONFIG.tableWidth, CONFIG.tableHeight);
+    const gradient = menuCtx.createLinearGradient(0, 0, currentConfig.tableWidth, currentConfig.tableHeight);
     gradient.addColorStop(0, '#8B4513');
     gradient.addColorStop(0.5, '#654321');
     gradient.addColorStop(1, '#8B4513');
-    
+
     // Fill entire canvas with wooden background
     menuCtx.fillStyle = gradient;
-    menuCtx.fillRect(0, 0, CONFIG.tableWidth, CONFIG.tableHeight);
-    
+    menuCtx.fillRect(0, 0, currentConfig.tableWidth, currentConfig.tableHeight);
+
     // Add inner shadow/highlight for depth
-    const shadowGradient = menuCtx.createLinearGradient(borderPadding, borderPadding, CONFIG.tableWidth - borderPadding, CONFIG.tableHeight - borderPadding);
+    const shadowGradient = menuCtx.createLinearGradient(borderPadding, borderPadding, currentConfig.tableWidth - borderPadding, currentConfig.tableHeight - borderPadding);
     shadowGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
     shadowGradient.addColorStop(0.5, 'rgba(0,0,0,0.1)');
     shadowGradient.addColorStop(1, 'rgba(0,0,0,0.2)');
     menuCtx.fillStyle = shadowGradient;
-    menuCtx.fillRect(borderPadding/2, borderPadding/2, CONFIG.tableWidth - borderPadding, CONFIG.tableHeight - borderPadding);
-    
+    menuCtx.fillRect(borderPadding/2, borderPadding/2, currentConfig.tableWidth - borderPadding, currentConfig.tableHeight - borderPadding);
+
     // Now draw the actual playing surface
-    const r = CONFIG.railSize;
-    
+    const r = currentConfig.railSize;
+
     // Table felt (green) - this should fill the inner area
     menuCtx.fillStyle = '#0d7a3e';
-    menuCtx.fillRect(borderPadding, borderPadding, CONFIG.tableWidth - borderPadding*2, CONFIG.tableHeight - borderPadding*2);
-    
+    menuCtx.fillRect(borderPadding, borderPadding, currentConfig.tableWidth - borderPadding*2, currentConfig.tableHeight - borderPadding*2);
+
     // Add felt texture gradient
     const feltGradient = menuCtx.createRadialGradient(
-        CONFIG.tableWidth / 2, CONFIG.tableHeight / 2, 0,
-        CONFIG.tableWidth / 2, CONFIG.tableHeight / 2, CONFIG.tableWidth / 2
+        currentConfig.tableWidth / 2, currentConfig.tableHeight / 2, 0,
+        currentConfig.tableWidth / 2, currentConfig.tableHeight / 2, currentConfig.tableWidth / 2
     );
     feltGradient.addColorStop(0, 'rgba(20, 140, 70, 0.3)');
     feltGradient.addColorStop(1, 'rgba(0, 80, 40, 0.3)');
     menuCtx.fillStyle = feltGradient;
-    menuCtx.fillRect(borderPadding, borderPadding, CONFIG.tableWidth - borderPadding*2, CONFIG.tableHeight - borderPadding*2);
-    
+    menuCtx.fillRect(borderPadding, borderPadding, currentConfig.tableWidth - borderPadding*2, currentConfig.tableHeight - borderPadding*2);
+
     // Rails (cushions) - adjusted for border
     const railOffset = borderPadding;
     menuCtx.fillStyle = '#0a5c2e';
     // Top rail
-    menuCtx.fillRect(railOffset + r + CONFIG.pocketRadius, railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
-    menuCtx.fillRect(CONFIG.tableWidth / 2 + CONFIG.pocketRadius * 0.5, railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    menuCtx.fillRect(railOffset + r + currentConfig.pocketRadius, railOffset, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
+    menuCtx.fillRect(currentConfig.tableWidth / 2 + currentConfig.pocketRadius * 0.5, railOffset, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
     // Bottom rail
-    menuCtx.fillRect(railOffset + r + CONFIG.pocketRadius, CONFIG.tableHeight - r - railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
-    menuCtx.fillRect(CONFIG.tableWidth / 2 + CONFIG.pocketRadius * 0.5, CONFIG.tableHeight - r - railOffset, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    menuCtx.fillRect(railOffset + r + currentConfig.pocketRadius, currentConfig.tableHeight - r - railOffset, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
+    menuCtx.fillRect(currentConfig.tableWidth / 2 + currentConfig.pocketRadius * 0.5, currentConfig.tableHeight - r - railOffset, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
     // Left rail
-    menuCtx.fillRect(railOffset, railOffset + r + CONFIG.pocketRadius, r, CONFIG.tableHeight - 2 * r - CONFIG.pocketRadius * 2 - borderPadding * 2);
+    menuCtx.fillRect(railOffset, railOffset + r + currentConfig.pocketRadius, r, currentConfig.tableHeight - 2 * r - currentConfig.pocketRadius * 2 - borderPadding * 2);
     // Right rail
-    menuCtx.fillRect(CONFIG.tableWidth - r - railOffset, railOffset + r + CONFIG.pocketRadius, r, CONFIG.tableHeight - 2 * r - CONFIG.pocketRadius * 2 - borderPadding * 2);
-    
+    menuCtx.fillRect(currentConfig.tableWidth - r - railOffset, railOffset + r + currentConfig.pocketRadius, r, currentConfig.tableHeight - 2 * r - currentConfig.pocketRadius * 2 - borderPadding * 2);
+
     // Draw pockets - adjusted for border
     menuCtx.fillStyle = '#000';
     const tempPockets = [
         { x: railOffset + r - 5, y: railOffset + r - 5 },                    // Top-left
-        { x: CONFIG.tableWidth / 2, y: railOffset + r - 10 },   // Top-middle
-        { x: CONFIG.tableWidth - r + 5 - railOffset, y: railOffset + r - 5 }, // Top-right
-        { x: railOffset + r - 5, y: CONFIG.tableHeight - r + 5 - railOffset }, // Bottom-left
-        { x: CONFIG.tableWidth / 2, y: CONFIG.tableHeight - r + 10 - railOffset }, // Bottom-middle
-        { x: CONFIG.tableWidth - r + 5 - railOffset, y: CONFIG.tableHeight - r + 5 - railOffset } // Bottom-right
+        { x: currentConfig.tableWidth / 2, y: railOffset + r - 10 },   // Top-middle
+        { x: currentConfig.tableWidth - r + 5 - railOffset, y: railOffset + r - 5 }, // Top-right
+        { x: railOffset + r - 5, y: currentConfig.tableHeight - r + 5 - railOffset }, // Bottom-left
+        { x: currentConfig.tableWidth / 2, y: currentConfig.tableHeight - r + 10 - railOffset }, // Bottom-middle
+        { x: currentConfig.tableWidth - r + 5 - railOffset, y: currentConfig.tableHeight - r + 5 - railOffset } // Bottom-right
     ];
-    
+
     for (const pocket of tempPockets) {
         menuCtx.beginPath();
-        menuCtx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
+        menuCtx.arc(pocket.x, pocket.y, currentConfig.pocketRadius, 0, Math.PI * 2);
         menuCtx.fill();
-        
+
         // Pocket inner shadow
         const shadowGradient = menuCtx.createRadialGradient(
-            pocket.x, pocket.y, CONFIG.pocketRadius * 0.5,
-            pocket.x, pocket.y, CONFIG.pocketRadius
+            pocket.x, pocket.y, currentConfig.pocketRadius * 0.5,
+            pocket.x, pocket.y, currentConfig.pocketRadius
         );
         shadowGradient.addColorStop(0, 'rgba(0,0,0,0.8)');
         shadowGradient.addColorStop(1, 'rgba(30,30,30,1)');
         menuCtx.fillStyle = shadowGradient;
         menuCtx.beginPath();
-        menuCtx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
+        menuCtx.arc(pocket.x, pocket.y, currentConfig.pocketRadius, 0, Math.PI * 2);
         menuCtx.fill();
         menuCtx.fillStyle = '#000';
     }
@@ -265,20 +286,20 @@ function drawMenuBackground() {
         // Top & Bottom diamonds
         if (d !== 0.5) {
             menuCtx.beginPath();
-            menuCtx.arc(borderPadding + (CONFIG.tableWidth - borderPadding*2) * d, railOffset + r / 2, 3, 0, Math.PI * 2);
+            menuCtx.arc(borderPadding + (currentConfig.tableWidth - borderPadding*2) * d, railOffset + r / 2, 3, 0, Math.PI * 2);
             menuCtx.fill();
             menuCtx.beginPath();
-            menuCtx.arc(borderPadding + (CONFIG.tableWidth - borderPadding*2) * d, CONFIG.tableHeight - r / 2 - railOffset, 3, 0, Math.PI * 2);
+            menuCtx.arc(borderPadding + (currentConfig.tableWidth - borderPadding*2) * d, currentConfig.tableHeight - r / 2 - railOffset, 3, 0, Math.PI * 2);
             menuCtx.fill();
         }
     }
     // Side diamonds
     for (const d of [0.25, 0.5, 0.75]) {
         menuCtx.beginPath();
-        menuCtx.arc(railOffset + r / 2, borderPadding + (CONFIG.tableHeight - borderPadding*2) * d, 3, 0, Math.PI * 2);
+        menuCtx.arc(railOffset + r / 2, borderPadding + (currentConfig.tableHeight - borderPadding*2) * d, 3, 0, Math.PI * 2);
         menuCtx.fill();
         menuCtx.beginPath();
-        menuCtx.arc(CONFIG.tableWidth - r / 2 - railOffset, borderPadding + (CONFIG.tableHeight - borderPadding*2) * d, 3, 0, Math.PI * 2);
+        menuCtx.arc(currentConfig.tableWidth - r / 2 - railOffset, borderPadding + (currentConfig.tableHeight - borderPadding*2) * d, 3, 0, Math.PI * 2);
         menuCtx.fill();
     }
     
@@ -288,11 +309,12 @@ function drawMenuBackground() {
 
 function drawMenuBalls() {
     if (!menuCtx) return;
-    
+
+    const currentConfig = getCurrentConfig();
     const borderPadding = 20;
-    const playAreaWidth = CONFIG.tableWidth - borderPadding * 2;
-    const playAreaHeight = CONFIG.tableHeight - borderPadding * 2;
-    
+    const playAreaWidth = currentConfig.tableWidth - borderPadding * 2;
+    const playAreaHeight = currentConfig.tableHeight - borderPadding * 2;
+
     // Draw some static balls for decoration - positioned within the play area
     const decorativeBalls = [
         { x: borderPadding + playAreaWidth * 0.2, y: borderPadding + playAreaHeight * 0.3, color: '#FFD700', number: 1 },
@@ -301,9 +323,9 @@ function drawMenuBalls() {
         { x: borderPadding + playAreaWidth * 0.7, y: borderPadding + playAreaHeight * 0.2, color: '#000000', number: 8 },
         { x: borderPadding + playAreaWidth * 0.5, y: borderPadding + playAreaHeight * 0.4, color: '#FFFFFF', number: null }
     ];
-    
+
     decorativeBalls.forEach(ball => {
-        const r = CONFIG.ballRadius;
+        const r = currentConfig.ballRadius;
         
         // Ball shadow
         menuCtx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -376,7 +398,9 @@ function startGame(mode) {
 }
 
 function resetGame() {
+    initPockets();
     initBalls();
+    calculateResponsiveSize();
     updatePocketedBallsDisplay();
     gameState = 'aiming';
     currentPlayerNumber = 1;
@@ -407,6 +431,21 @@ function updateStatusMessage() {
     }
 }
 
+// Table selector event listeners
+function selectTable(tableType) {
+    selectedTable = tableType;
+
+    // Update UI
+    standardTableBtn.classList.toggle('active', tableType === 'standard');
+    elongatedTableBtn.classList.toggle('active', tableType === 'elongated');
+
+    // Redraw menu canvas with new table
+    initMenuCanvas();
+}
+
+standardTableBtn.addEventListener('click', () => selectTable('standard'));
+elongatedTableBtn.addEventListener('click', () => selectTable('elongated'));
+
 // Menu event listeners
 twoPlayerBtn.addEventListener('click', () => startGame('twoPlayer'));
 practiceBtn.addEventListener('click', () => startGame('practice'));
@@ -414,11 +453,16 @@ backToMenuBtn.addEventListener('click', showMenu);
 
 // Initialize pockets
 function initPockets() {
+    if (selectedTable === 'elongated') {
+        pockets = initPocketsTable2();
+        return;
+    }
+
     const r = CONFIG.railSize;
     const w = CONFIG.tableWidth;
     const h = CONFIG.tableHeight;
     const offset = 5;
-    
+
     pockets = [
         { x: r - offset, y: r - offset },                    // Top-left
         { x: w / 2, y: r - offset - 5 },                     // Top-middle
@@ -431,12 +475,20 @@ function initPockets() {
 
 // Initialize balls in triangle formation
 function initBalls() {
+    const currentConfig = getCurrentConfig();
+
+    if (selectedTable === 'elongated') {
+        balls = initBallsTable2(currentConfig);
+        pocketedBalls = [];
+        return;
+    }
+
     balls = [];
     pocketedBalls = [];
-    
-    const startX = CONFIG.tableWidth * 0.3;
-    const startY = CONFIG.tableHeight / 2;
-    const r = CONFIG.ballRadius;
+
+    const startX = currentConfig.tableWidth * 0.3;
+    const startY = currentConfig.tableHeight / 2;
+    const r = currentConfig.ballRadius;
     const spacing = r * 2.1;
     
     // Triangle formation - 5 rows
@@ -469,8 +521,8 @@ function initBalls() {
     // Cue ball on the right side
     balls.push({
         id: 0,
-        x: CONFIG.tableWidth * 0.75,
-        y: CONFIG.tableHeight / 2,
+        x: currentConfig.tableWidth * 0.75,
+        y: currentConfig.tableHeight / 2,
         vx: 0,
         vy: 0,
         rotation: 0,
@@ -485,54 +537,62 @@ function getCueBall() {
 
 // Draw the table
 function drawTable() {
-    const r = CONFIG.railSize;
-    
+    const currentConfig = getCurrentConfig();
+
+    // Use table-specific drawing function
+    if (selectedTable === 'elongated') {
+        drawTable2(ctx, currentConfig);
+        return;
+    }
+
+    const r = currentConfig.railSize;
+
     // Table felt (green)
     ctx.fillStyle = '#0d7a3e';
-    ctx.fillRect(0, 0, CONFIG.tableWidth, CONFIG.tableHeight);
-    
+    ctx.fillRect(0, 0, currentConfig.tableWidth, currentConfig.tableHeight);
+
     // Add felt texture gradient
     const gradient = ctx.createRadialGradient(
-        CONFIG.tableWidth / 2, CONFIG.tableHeight / 2, 0,
-        CONFIG.tableWidth / 2, CONFIG.tableHeight / 2, CONFIG.tableWidth / 2
+        currentConfig.tableWidth / 2, currentConfig.tableHeight / 2, 0,
+        currentConfig.tableWidth / 2, currentConfig.tableHeight / 2, currentConfig.tableWidth / 2
     );
     gradient.addColorStop(0, 'rgba(20, 140, 70, 0.3)');
     gradient.addColorStop(1, 'rgba(0, 80, 40, 0.3)');
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, CONFIG.tableWidth, CONFIG.tableHeight);
-    
+    ctx.fillRect(0, 0, currentConfig.tableWidth, currentConfig.tableHeight);
+
     // Rails (cushions)
     ctx.fillStyle = '#0a5c2e';
     // Top rail
-    ctx.fillRect(r + CONFIG.pocketRadius, 0, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
-    ctx.fillRect(CONFIG.tableWidth / 2 + CONFIG.pocketRadius * 0.5, 0, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    ctx.fillRect(r + currentConfig.pocketRadius, 0, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
+    ctx.fillRect(currentConfig.tableWidth / 2 + currentConfig.pocketRadius * 0.5, 0, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
     // Bottom rail
-    ctx.fillRect(r + CONFIG.pocketRadius, CONFIG.tableHeight - r, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
-    ctx.fillRect(CONFIG.tableWidth / 2 + CONFIG.pocketRadius * 0.5, CONFIG.tableHeight - r, CONFIG.tableWidth / 2 - r - CONFIG.pocketRadius * 1.5, r);
+    ctx.fillRect(r + currentConfig.pocketRadius, currentConfig.tableHeight - r, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
+    ctx.fillRect(currentConfig.tableWidth / 2 + currentConfig.pocketRadius * 0.5, currentConfig.tableHeight - r, currentConfig.tableWidth / 2 - r - currentConfig.pocketRadius * 1.5, r);
     // Left rail
-    ctx.fillRect(0, r + CONFIG.pocketRadius, r, CONFIG.tableHeight - 2 * r - CONFIG.pocketRadius * 2);
+    ctx.fillRect(0, r + currentConfig.pocketRadius, r, currentConfig.tableHeight - 2 * r - currentConfig.pocketRadius * 2);
     // Right rail
-    ctx.fillRect(CONFIG.tableWidth - r, r + CONFIG.pocketRadius, r, CONFIG.tableHeight - 2 * r - CONFIG.pocketRadius * 2);
-    
+    ctx.fillRect(currentConfig.tableWidth - r, r + currentConfig.pocketRadius, r, currentConfig.tableHeight - 2 * r - currentConfig.pocketRadius * 2);
+
     // Draw pockets
     ctx.fillStyle = '#000';
     for (const pocket of pockets) {
         ctx.beginPath();
-        ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
+        ctx.arc(pocket.x, pocket.y, currentConfig.pocketRadius, 0, Math.PI * 2);
         ctx.fill();
     }
-    
+
     // Pocket inner shadow
     for (const pocket of pockets) {
         const shadowGradient = ctx.createRadialGradient(
-            pocket.x, pocket.y, CONFIG.pocketRadius * 0.5,
-            pocket.x, pocket.y, CONFIG.pocketRadius
+            pocket.x, pocket.y, currentConfig.pocketRadius * 0.5,
+            pocket.x, pocket.y, currentConfig.pocketRadius
         );
         shadowGradient.addColorStop(0, 'rgba(0,0,0,0.8)');
         shadowGradient.addColorStop(1, 'rgba(30,30,30,1)');
         ctx.fillStyle = shadowGradient;
         ctx.beginPath();
-        ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
+        ctx.arc(pocket.x, pocket.y, currentConfig.pocketRadius, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -543,23 +603,23 @@ function drawTable() {
         // Top
         if (d !== 0.5) {
             ctx.beginPath();
-            ctx.arc(CONFIG.tableWidth * d, r / 2, 3, 0, Math.PI * 2);
+            ctx.arc(currentConfig.tableWidth * d, r / 2, 3, 0, Math.PI * 2);
             ctx.fill();
         }
         // Bottom
         if (d !== 0.5) {
             ctx.beginPath();
-            ctx.arc(CONFIG.tableWidth * d, CONFIG.tableHeight - r / 2, 3, 0, Math.PI * 2);
+            ctx.arc(currentConfig.tableWidth * d, currentConfig.tableHeight - r / 2, 3, 0, Math.PI * 2);
             ctx.fill();
         }
     }
     // Side diamonds
     for (const d of [0.25, 0.5, 0.75]) {
         ctx.beginPath();
-        ctx.arc(r / 2, CONFIG.tableHeight * d, 3, 0, Math.PI * 2);
+        ctx.arc(r / 2, currentConfig.tableHeight * d, 3, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(CONFIG.tableWidth - r / 2, CONFIG.tableHeight * d, 3, 0, Math.PI * 2);
+        ctx.arc(currentConfig.tableWidth - r / 2, currentConfig.tableHeight * d, 3, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -567,15 +627,16 @@ function drawTable() {
     ctx.strokeStyle = 'rgba(255,255,255,0.2)';
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
-    ctx.moveTo(CONFIG.tableWidth * 0.75, r);
-    ctx.lineTo(CONFIG.tableWidth * 0.75, CONFIG.tableHeight - r);
+    ctx.moveTo(currentConfig.tableWidth * 0.75, r);
+    ctx.lineTo(currentConfig.tableWidth * 0.75, currentConfig.tableHeight - r);
     ctx.stroke();
     ctx.setLineDash([]);
 }
 
 // Draw a ball
 function drawBall(ball) {
-    const r = CONFIG.ballRadius;
+    const currentConfig = getCurrentConfig();
+    const r = currentConfig.ballRadius;
     const circumference = 2 * Math.PI * r;
     
     // Pocketing animation: shrink and darken
@@ -673,50 +734,51 @@ function drawBall(ball) {
 
 // Draw aiming line and cue stick
 function drawAimingLine() {
+    const currentConfig = getCurrentConfig();
     cueCtx.clearRect(0, 0, cueCanvas.width, cueCanvas.height);
-    
+
     if (!isDragging || gameState !== 'aiming') return;
-    
+
     const cueBall = getCueBall();
     if (!cueBall) return;
-    
+
     const dx = dragStart.x - dragEnd.x;
     const dy = dragStart.y - dragEnd.y;
     const dragDistance = Math.sqrt(dx * dx + dy * dy);
-    
+
     // Power only builds after passing dead zone
-    const effectiveDistance = Math.max(0, dragDistance - CONFIG.deadZone);
-    const power = Math.min(effectiveDistance * CONFIG.powerMultiplier, CONFIG.maxPower);
+    const effectiveDistance = Math.max(0, dragDistance - currentConfig.deadZone);
+    const power = Math.min(effectiveDistance * currentConfig.powerMultiplier, currentConfig.maxPower);
     const angle = Math.atan2(dy, dx);
-    
+
     // Draw dead zone indicator on game canvas
-    const inDeadZone = dragDistance <= CONFIG.deadZone;
+    const inDeadZone = dragDistance <= currentConfig.deadZone;
     ctx.strokeStyle = inDeadZone ? 'rgba(255, 255, 100, 0.6)' : 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
-    ctx.arc(cueBall.x, cueBall.y, CONFIG.deadZone, 0, Math.PI * 2);
+    ctx.arc(cueBall.x, cueBall.y, currentConfig.deadZone, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
-    
+
     // Label when in dead zone
     if (inDeadZone) {
         ctx.fillStyle = 'rgba(255, 255, 100, 0.8)';
         ctx.font = '10px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('AIM', cueBall.x, cueBall.y - CONFIG.deadZone - 8);
+        ctx.fillText('AIM', cueBall.x, cueBall.y - currentConfig.deadZone - 8);
     }
-    
+
     // Offset positions for cue canvas
     // With canvas-wrapper having no padding, offset is simply CUE_OVERFLOW
     const ballX = cueBall.x + CUE_OVERFLOW;
     const ballY = cueBall.y + CUE_OVERFLOW;
-    
+
     // Draw cue stick
     const stickLength = 200;
     const stickStart = {
-        x: ballX - Math.cos(angle) * (CONFIG.ballRadius + 10 + power * 3),
-        y: ballY - Math.sin(angle) * (CONFIG.ballRadius + 10 + power * 3)
+        x: ballX - Math.cos(angle) * (currentConfig.ballRadius + 10 + power * 3),
+        y: ballY - Math.sin(angle) * (currentConfig.ballRadius + 10 + power * 3)
     };
     const stickEnd = {
         x: stickStart.x - Math.cos(angle) * stickLength,
@@ -759,46 +821,47 @@ function drawAimingLine() {
     ctx.setLineDash([]);
     
     // Power indicator
-    const powerPercent = (power / CONFIG.maxPower) * 100;
+    const powerPercent = (power / currentConfig.maxPower) * 100;
     ctx.fillStyle = powerPercent > 70 ? '#ff4444' : powerPercent > 40 ? '#ffaa00' : '#44ff44';
-    ctx.fillRect(20, CONFIG.tableHeight - 30, powerPercent * 2, 15);
+    ctx.fillRect(20, currentConfig.tableHeight - 30, powerPercent * 2, 15);
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
-    ctx.strokeRect(20, CONFIG.tableHeight - 30, 200, 15);
-    
+    ctx.strokeRect(20, currentConfig.tableHeight - 30, 200, 15);
+
     ctx.fillStyle = '#fff';
     ctx.font = '12px Arial';
     ctx.textAlign = 'left';
-    ctx.fillText('Power', 20, CONFIG.tableHeight - 35);
+    ctx.fillText('Power', 20, currentConfig.tableHeight - 35);
 }
 
 // Physics update
 function updatePhysics() {
+    const currentConfig = getCurrentConfig();
     let allStopped = true;
-    
+
     for (const ball of balls) {
-        if (Math.abs(ball.vx) > CONFIG.minVelocity || Math.abs(ball.vy) > CONFIG.minVelocity) {
+        if (Math.abs(ball.vx) > currentConfig.minVelocity || Math.abs(ball.vy) > currentConfig.minVelocity) {
             allStopped = false;
-            
+
             ball.x += ball.vx;
             ball.y += ball.vy;
-            
+
             // Update rotation based on distance traveled
             const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
             ball.rotation += speed;
-            
-            ball.vx *= CONFIG.friction;
-            ball.vy *= CONFIG.friction;
-            
-            if (Math.abs(ball.vx) < CONFIG.minVelocity) ball.vx = 0;
-            if (Math.abs(ball.vy) < CONFIG.minVelocity) ball.vy = 0;
+
+            ball.vx *= currentConfig.friction;
+            ball.vy *= currentConfig.friction;
+
+            if (Math.abs(ball.vx) < currentConfig.minVelocity) ball.vx = 0;
+            if (Math.abs(ball.vy) < currentConfig.minVelocity) ball.vy = 0;
         }
-        
+
         // Hard boundary
-        if (ball.x < 0) { ball.x = CONFIG.railSize + CONFIG.ballRadius; ball.vx = Math.abs(ball.vx) * 0.3; }
-        if (ball.x > CONFIG.tableWidth) { ball.x = CONFIG.tableWidth - CONFIG.railSize - CONFIG.ballRadius; ball.vx = -Math.abs(ball.vx) * 0.3; }
-        if (ball.y < 0) { ball.y = CONFIG.railSize + CONFIG.ballRadius; ball.vy = Math.abs(ball.vy) * 0.3; }
-        if (ball.y > CONFIG.tableHeight) { ball.y = CONFIG.tableHeight - CONFIG.railSize - CONFIG.ballRadius; ball.vy = -Math.abs(ball.vy) * 0.3; }
+        if (ball.x < 0) { ball.x = currentConfig.railSize + currentConfig.ballRadius; ball.vx = Math.abs(ball.vx) * 0.3; }
+        if (ball.x > currentConfig.tableWidth) { ball.x = currentConfig.tableWidth - currentConfig.railSize - currentConfig.ballRadius; ball.vx = -Math.abs(ball.vx) * 0.3; }
+        if (ball.y < 0) { ball.y = currentConfig.railSize + currentConfig.ballRadius; ball.vy = Math.abs(ball.vy) * 0.3; }
+        if (ball.y > currentConfig.tableHeight) { ball.y = currentConfig.tableHeight - currentConfig.railSize - currentConfig.ballRadius; ball.vy = -Math.abs(ball.vy) * 0.3; }
     }
     
     // Ball-to-ball collisions
@@ -852,10 +915,11 @@ function updatePhysics() {
             } else {
                 // Cue ball pocketed - respawn after delay
                 setTimeout(() => {
+                    const config = getCurrentConfig();
                     balls.push({
                         id: 0,
-                        x: CONFIG.tableWidth * 0.75,
-                        y: CONFIG.tableHeight / 2,
+                        x: config.tableWidth * 0.75,
+                        y: config.tableHeight / 2,
                         vx: 0,
                         vy: 0,
                         rotation: 0,
@@ -884,11 +948,12 @@ function updatePhysics() {
 function checkBallCollision(b1, b2) {
     // Skip if either ball is being pocketed
     if (b1.pocketing || b2.pocketing) return;
-    
+
+    const currentConfig = getCurrentConfig();
     const dx = b2.x - b1.x;
     const dy = b2.y - b1.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const minDist = CONFIG.ballRadius * 2;
+    const minDist = currentConfig.ballRadius * 2;
     
     if (dist < minDist && dist > 0) {
         // Normalize collision vector
@@ -924,21 +989,22 @@ function checkBallCollision(b1, b2) {
 function checkWallCollision(ball) {
     // Skip if ball is being pocketed
     if (ball.pocketing) return;
-    
-    const r = CONFIG.ballRadius;
-    const rail = CONFIG.railSize;
-    
+
+    const currentConfig = getCurrentConfig();
+    const r = currentConfig.ballRadius;
+    const rail = currentConfig.railSize;
+
     // Check if near a pocket
     for (const pocket of pockets) {
         const dx = ball.x - pocket.x;
         const dy = ball.y - pocket.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        if (dist < CONFIG.pocketRadius + 5) {
+
+        if (dist < currentConfig.pocketRadius + 5) {
             return; // Skip wall collision near pockets
         }
-        
-        if (dist < CONFIG.pocketRadius * 1.5) {
+
+        if (dist < currentConfig.pocketRadius * 1.5) {
             const toPocketX = pocket.x - ball.x;
             const toPocketY = pocket.y - ball.y;
             const dotProduct = ball.vx * toPocketX + ball.vy * toPocketY;
@@ -947,15 +1013,15 @@ function checkWallCollision(ball) {
             }
         }
     }
-    
+
     // Left wall
     if (ball.x - r < rail) {
         ball.x = rail + r;
         ball.vx = -ball.vx * 0.8;
     }
     // Right wall
-    if (ball.x + r > CONFIG.tableWidth - rail) {
-        ball.x = CONFIG.tableWidth - rail - r;
+    if (ball.x + r > currentConfig.tableWidth - rail) {
+        ball.x = currentConfig.tableWidth - rail - r;
         ball.vx = -ball.vx * 0.8;
     }
     // Top wall
@@ -964,8 +1030,8 @@ function checkWallCollision(ball) {
         ball.vy = -ball.vy * 0.8;
     }
     // Bottom wall
-    if (ball.y + r > CONFIG.tableHeight - rail) {
-        ball.y = CONFIG.tableHeight - rail - r;
+    if (ball.y + r > currentConfig.tableHeight - rail) {
+        ball.y = currentConfig.tableHeight - rail - r;
         ball.vy = -ball.vy * 0.8;
     }
 }
@@ -974,13 +1040,15 @@ function checkWallCollision(ball) {
 function checkPocket(ball) {
     // Skip balls that are already being pocketed
     if (ball.pocketing) return null;
-    
+
+    const currentConfig = getCurrentConfig();
+
     for (const pocket of pockets) {
         const dx = ball.x - pocket.x;
         const dy = ball.y - pocket.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        if (dist < CONFIG.pocketRadius) {
+
+        if (dist < currentConfig.pocketRadius) {
             return pocket; // Return the pocket location
         }
     }
@@ -1015,73 +1083,74 @@ function updatePocketedBallsDisplay() {
 // Draw debug info
 function drawDebug() {
     if (!debugMode) return;
-    
-    const r = CONFIG.ballRadius;
-    const rail = CONFIG.railSize;
-    
+
+    const currentConfig = getCurrentConfig();
+    const r = currentConfig.ballRadius;
+    const rail = currentConfig.railSize;
+
     ctx.strokeStyle = '#ff0000';
     ctx.lineWidth = 2;
     ctx.setLineDash([]);
-    
+
     // Wall boundaries
     ctx.beginPath();
     ctx.moveTo(rail + r, 0);
-    ctx.lineTo(rail + r, CONFIG.tableHeight);
+    ctx.lineTo(rail + r, currentConfig.tableHeight);
     ctx.stroke();
-    
+
     ctx.beginPath();
-    ctx.moveTo(CONFIG.tableWidth - rail - r, 0);
-    ctx.lineTo(CONFIG.tableWidth - rail - r, CONFIG.tableHeight);
+    ctx.moveTo(currentConfig.tableWidth - rail - r, 0);
+    ctx.lineTo(currentConfig.tableWidth - rail - r, currentConfig.tableHeight);
     ctx.stroke();
-    
+
     ctx.beginPath();
     ctx.moveTo(0, rail + r);
-    ctx.lineTo(CONFIG.tableWidth, rail + r);
+    ctx.lineTo(currentConfig.tableWidth, rail + r);
     ctx.stroke();
-    
+
     ctx.beginPath();
-    ctx.moveTo(0, CONFIG.tableHeight - rail - r);
-    ctx.lineTo(CONFIG.tableWidth, CONFIG.tableHeight - rail - r);
+    ctx.moveTo(0, currentConfig.tableHeight - rail - r);
+    ctx.lineTo(currentConfig.tableWidth, currentConfig.tableHeight - rail - r);
     ctx.stroke();
-    
+
     // Pocket zones
     ctx.strokeStyle = '#ffff00';
     ctx.lineWidth = 2;
     for (const pocket of pockets) {
         ctx.beginPath();
-        ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius, 0, Math.PI * 2);
+        ctx.arc(pocket.x, pocket.y, currentConfig.pocketRadius, 0, Math.PI * 2);
         ctx.stroke();
-        
+
         // Inner safe zone (cyan)
         ctx.strokeStyle = '#00ffff';
         ctx.beginPath();
-        ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius + 5, 0, Math.PI * 2);
+        ctx.arc(pocket.x, pocket.y, currentConfig.pocketRadius + 5, 0, Math.PI * 2);
         ctx.stroke();
-        
+
         // Outer guide zone (orange dashed)
         ctx.strokeStyle = '#ff8800';
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.arc(pocket.x, pocket.y, CONFIG.pocketRadius * 1.5, 0, Math.PI * 2);
+        ctx.arc(pocket.x, pocket.y, currentConfig.pocketRadius * 1.5, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
-        
+
         // Pocket center
         ctx.fillStyle = '#ffff00';
         ctx.beginPath();
         ctx.arc(pocket.x, pocket.y, 3, 0, Math.PI * 2);
         ctx.fill();
-        
+
         ctx.strokeStyle = '#ffff00';
     }
-    
+
     // Ball collision circles and velocity vectors
     ctx.strokeStyle = '#00ffff';
     ctx.lineWidth = 1;
     for (const ball of balls) {
         // Ball collision boundary
         ctx.beginPath();
-        ctx.arc(ball.x, ball.y, CONFIG.ballRadius, 0, Math.PI * 2);
+        ctx.arc(ball.x, ball.y, currentConfig.ballRadius, 0, Math.PI * 2);
         ctx.stroke();
         
         // Ball center point
@@ -1107,15 +1176,16 @@ function drawDebug() {
     ctx.fillStyle = '#ff0000';
     ctx.font = '14px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('DEBUG MODE (X to toggle)', CONFIG.tableWidth - 10, CONFIG.tableHeight - 10);
-    ctx.fillText(`Rail size: ${rail}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 30);
-    ctx.fillText(`Ball radius: ${r}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 50);
-    ctx.fillText(`Pocket radius: ${CONFIG.pocketRadius}px`, CONFIG.tableWidth - 10, CONFIG.tableHeight - 70);
+    ctx.fillText('DEBUG MODE (X to toggle)', currentConfig.tableWidth - 10, currentConfig.tableHeight - 10);
+    ctx.fillText(`Rail size: ${rail}px`, currentConfig.tableWidth - 10, currentConfig.tableHeight - 30);
+    ctx.fillText(`Ball radius: ${r}px`, currentConfig.tableWidth - 10, currentConfig.tableHeight - 50);
+    ctx.fillText(`Pocket radius: ${currentConfig.pocketRadius}px`, currentConfig.tableWidth - 10, currentConfig.tableHeight - 70);
 }
 
 // Main draw function
 function draw() {
-    ctx.clearRect(0, 0, CONFIG.tableWidth, CONFIG.tableHeight);
+    const currentConfig = getCurrentConfig();
+    ctx.clearRect(0, 0, currentConfig.tableWidth, currentConfig.tableHeight);
     
     drawTable();
     
@@ -1138,9 +1208,10 @@ function gameLoop() {
 
 // Get canvas coordinates from event
 function getCanvasCoords(e) {
+    const currentConfig = getCurrentConfig();
     const rect = canvas.getBoundingClientRect();
-    const scaleX = CONFIG.tableWidth / rect.width;
-    const scaleY = CONFIG.tableHeight / rect.height;
+    const scaleX = currentConfig.tableWidth / rect.width;
+    const scaleY = currentConfig.tableHeight / rect.height;
     
     let clientX, clientY;
     if (e.touches && e.touches.length > 0) {
@@ -1233,16 +1304,17 @@ canvas.addEventListener('touchcancel', (e) => {
 
 // Shoot function
 function shoot() {
+    const currentConfig = getCurrentConfig();
     const cueBall = getCueBall();
     if (!cueBall) return;
-    
+
     const dx = dragStart.x - dragEnd.x;
     const dy = dragStart.y - dragEnd.y;
     const dragDistance = Math.sqrt(dx * dx + dy * dy);
-    
+
     // Power only builds after passing dead zone
-    const effectiveDistance = Math.max(0, dragDistance - CONFIG.deadZone);
-    const power = Math.min(effectiveDistance * CONFIG.powerMultiplier, CONFIG.maxPower);
+    const effectiveDistance = Math.max(0, dragDistance - currentConfig.deadZone);
+    const power = Math.min(effectiveDistance * currentConfig.powerMultiplier, currentConfig.maxPower);
     
     if (power > 0.5) {
         const angle = Math.atan2(dy, dx);

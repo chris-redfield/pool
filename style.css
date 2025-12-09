@@ -289,6 +289,74 @@ body {
     background-clip: text;
 }
 
+.table-selector {
+    margin-bottom: 50px;
+}
+
+.selector-title {
+    font-size: 1.5rem;
+    font-weight: normal;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.table-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.table-btn {
+    background: rgba(50, 50, 70, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 15px 25px;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'Georgia', serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 180px;
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.table-btn:hover {
+    border-color: rgba(255, 215, 0, 0.5);
+    transform: translateY(-2px);
+    background: rgba(60, 60, 80, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.table-btn.active {
+    background: linear-gradient(145deg,
+        rgba(139, 69, 19, 0.8),
+        rgba(101, 67, 33, 0.8)
+    );
+    border-color: rgba(255, 215, 0, 0.6);
+    color: #fff;
+    box-shadow:
+        0 4px 15px rgba(0,0,0,0.3),
+        0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.table-name {
+    display: block;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.table-desc {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    font-style: italic;
+}
+
 .menu-buttons {
     display: flex;
     flex-direction: column;
@@ -397,20 +465,42 @@ body {
         font-size: 3rem;
         margin-bottom: 40px;
     }
-    
+
+    .table-selector {
+        margin-bottom: 35px;
+    }
+
+    .selector-title {
+        font-size: 1.3rem;
+    }
+
+    .table-btn {
+        min-width: 150px;
+        padding: 12px 20px;
+        font-size: 0.85rem;
+    }
+
+    .table-name {
+        font-size: 1rem;
+    }
+
+    .table-desc {
+        font-size: 0.7rem;
+    }
+
     .menu-btn {
         min-width: 250px;
         padding: 20px 30px;
     }
-    
+
     .btn-icon {
         font-size: 2rem;
     }
-    
+
     .btn-text {
         font-size: 1.2rem;
     }
-    
+
     .menu-buttons {
         gap: 25px;
     }
@@ -421,24 +511,50 @@ body {
         font-size: 2.5rem;
         margin-bottom: 30px;
     }
-    
+
+    .table-selector {
+        margin-bottom: 25px;
+    }
+
+    .selector-title {
+        font-size: 1.2rem;
+    }
+
+    .table-options {
+        gap: 12px;
+    }
+
+    .table-btn {
+        min-width: 140px;
+        padding: 10px 15px;
+        font-size: 0.8rem;
+    }
+
+    .table-name {
+        font-size: 0.95rem;
+    }
+
+    .table-desc {
+        font-size: 0.65rem;
+    }
+
     .menu-btn {
         min-width: 220px;
         padding: 18px 25px;
     }
-    
+
     .btn-icon {
         font-size: 1.8rem;
     }
-    
+
     .btn-text {
         font-size: 1.1rem;
     }
-    
+
     .btn-subtitle {
         font-size: 0.8rem;
     }
-    
+
     .menu-buttons {
         gap: 20px;
     }
