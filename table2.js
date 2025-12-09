@@ -15,7 +15,7 @@ const TABLE2_CONFIG = {
 };
 
 // Initialize pockets for elongated table
-// Middle pockets are on the LONG sides (left/right) instead of short ends (top/bottom)
+// 10 pockets total: 4 corners + 2 on each long side + 2 on top + 2 on bottom
 function initPocketsTable2() {
     const r = TABLE2_CONFIG.railSize;
     const w = TABLE2_CONFIG.tableWidth;
@@ -23,12 +23,16 @@ function initPocketsTable2() {
     const offset = 5;
 
     return [
-        { x: r - offset, y: r - offset },                    // Top-left
-        { x: w - r + offset, y: r - offset },                // Top-right
+        { x: r - offset, y: r - offset },                    // Top-left corner
+        { x: w * 0.33, y: r - offset - 5 },                  // Top-left middle
+        { x: w * 0.67, y: r - offset - 5 },                  // Top-right middle
+        { x: w - r + offset, y: r - offset },                // Top-right corner
         { x: r - offset - 5, y: h / 2 },                     // Middle-left
         { x: w - r + offset + 5, y: h / 2 },                 // Middle-right
-        { x: r - offset, y: h - r + offset },                // Bottom-left
-        { x: w - r + offset, y: h - r + offset }             // Bottom-right
+        { x: r - offset, y: h - r + offset },                // Bottom-left corner
+        { x: w * 0.33, y: h - r + offset + 5 },              // Bottom-left middle
+        { x: w * 0.67, y: h - r + offset + 5 },              // Bottom-right middle
+        { x: w - r + offset, y: h - r + offset }             // Bottom-right corner
     ];
 }
 
@@ -50,14 +54,26 @@ function drawTable2(ctx, config) {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, config.tableWidth, config.tableHeight);
 
-    // Rails (cushions) - adjusted for elongated table with middle pockets on sides
+    // Rails (cushions) - split for 10 pockets
     ctx.fillStyle = '#0a5c2e';
 
-    // Top rail (full length, no middle pocket)
-    ctx.fillRect(r + config.pocketRadius, 0, config.tableWidth - 2 * r - 2 * config.pocketRadius, r);
+    // Top rail (split into 3 segments for 2 middle pockets)
+    const topPocket1X = config.tableWidth * 0.33;
+    const topPocket2X = config.tableWidth * 0.67;
+    // Segment 1: from left corner to first middle pocket
+    ctx.fillRect(r + config.pocketRadius, 0, topPocket1X - r - config.pocketRadius * 1.5, r);
+    // Segment 2: between the two middle pockets
+    ctx.fillRect(topPocket1X + config.pocketRadius * 0.5, 0, topPocket2X - topPocket1X - config.pocketRadius, r);
+    // Segment 3: from second middle pocket to right corner
+    ctx.fillRect(topPocket2X + config.pocketRadius * 0.5, 0, config.tableWidth - topPocket2X - r - config.pocketRadius * 0.5, r);
 
-    // Bottom rail (full length, no middle pocket)
-    ctx.fillRect(r + config.pocketRadius, config.tableHeight - r, config.tableWidth - 2 * r - 2 * config.pocketRadius, r);
+    // Bottom rail (split into 3 segments for 2 middle pockets)
+    // Segment 1: from left corner to first middle pocket
+    ctx.fillRect(r + config.pocketRadius, config.tableHeight - r, topPocket1X - r - config.pocketRadius * 1.5, r);
+    // Segment 2: between the two middle pockets
+    ctx.fillRect(topPocket1X + config.pocketRadius * 0.5, config.tableHeight - r, topPocket2X - topPocket1X - config.pocketRadius, r);
+    // Segment 3: from second middle pocket to right corner
+    ctx.fillRect(topPocket2X + config.pocketRadius * 0.5, config.tableHeight - r, config.tableWidth - topPocket2X - r - config.pocketRadius * 0.5, r);
 
     // Left rail (split for middle pocket)
     ctx.fillRect(0, r + config.pocketRadius, r, config.tableHeight / 2 - r - config.pocketRadius * 1.5);
@@ -90,11 +106,12 @@ function drawTable2(ctx, config) {
         ctx.fill();
     }
 
-    // Diamond markers on rails
+    // Diamond markers on rails (placed between pockets)
     ctx.fillStyle = '#FFF';
 
-    // Top & Bottom diamonds (more diamonds for longer table)
-    const topBottomDiamonds = [0.15, 0.3, 0.45, 0.55, 0.7, 0.85];
+    // Top & Bottom diamonds (placed in segments between pockets)
+    // Diamonds at: 16.5%, 50%, 83.5% (between the pockets at 33% and 67%)
+    const topBottomDiamonds = [0.165, 0.5, 0.835];
     for (const d of topBottomDiamonds) {
         ctx.beginPath();
         ctx.arc(config.tableWidth * d, r / 2, 3, 0, Math.PI * 2);
@@ -104,7 +121,7 @@ function drawTable2(ctx, config) {
         ctx.fill();
     }
 
-    // Side diamonds (excluding middle where pocket is)
+    // Side diamonds (excluding middle where pocket is at 50%)
     const sideDiamonds = [0.25, 0.75];
     for (const d of sideDiamonds) {
         ctx.beginPath();
@@ -211,15 +228,22 @@ function drawMenuBackgroundTable2(menuCtx, config) {
     menuCtx.fillStyle = feltGradient;
     menuCtx.fillRect(borderPadding, borderPadding, config.tableWidth - borderPadding*2, config.tableHeight - borderPadding*2);
 
-    // Rails (cushions) - adjusted for border and elongated table
+    // Rails (cushions) - adjusted for border and 10 pockets
     const railOffset = borderPadding;
     menuCtx.fillStyle = '#0a5c2e';
 
-    // Top rail (full length)
-    menuCtx.fillRect(railOffset + r + config.pocketRadius, railOffset, config.tableWidth - 2 * r - 2 * config.pocketRadius - borderPadding * 2, r);
+    const menuTopPocket1X = config.tableWidth * 0.33;
+    const menuTopPocket2X = config.tableWidth * 0.67;
 
-    // Bottom rail (full length)
-    menuCtx.fillRect(railOffset + r + config.pocketRadius, config.tableHeight - r - railOffset, config.tableWidth - 2 * r - 2 * config.pocketRadius - borderPadding * 2, r);
+    // Top rail (split into 3 segments for 2 middle pockets)
+    menuCtx.fillRect(railOffset + r + config.pocketRadius, railOffset, menuTopPocket1X - r - config.pocketRadius * 1.5 - borderPadding, r);
+    menuCtx.fillRect(menuTopPocket1X + config.pocketRadius * 0.5, railOffset, menuTopPocket2X - menuTopPocket1X - config.pocketRadius, r);
+    menuCtx.fillRect(menuTopPocket2X + config.pocketRadius * 0.5, railOffset, config.tableWidth - menuTopPocket2X - r - config.pocketRadius * 0.5 - borderPadding * 2, r);
+
+    // Bottom rail (split into 3 segments for 2 middle pockets)
+    menuCtx.fillRect(railOffset + r + config.pocketRadius, config.tableHeight - r - railOffset, menuTopPocket1X - r - config.pocketRadius * 1.5 - borderPadding, r);
+    menuCtx.fillRect(menuTopPocket1X + config.pocketRadius * 0.5, config.tableHeight - r - railOffset, menuTopPocket2X - menuTopPocket1X - config.pocketRadius, r);
+    menuCtx.fillRect(menuTopPocket2X + config.pocketRadius * 0.5, config.tableHeight - r - railOffset, config.tableWidth - menuTopPocket2X - r - config.pocketRadius * 0.5 - borderPadding * 2, r);
 
     // Left rail (split for middle pocket)
     menuCtx.fillRect(railOffset, railOffset + r + config.pocketRadius, r, config.tableHeight / 2 - r - config.pocketRadius * 1.5 - borderPadding);
@@ -229,15 +253,19 @@ function drawMenuBackgroundTable2(menuCtx, config) {
     menuCtx.fillRect(config.tableWidth - r - railOffset, railOffset + r + config.pocketRadius, r, config.tableHeight / 2 - r - config.pocketRadius * 1.5 - borderPadding);
     menuCtx.fillRect(config.tableWidth - r - railOffset, config.tableHeight / 2 + config.pocketRadius * 0.5, r, config.tableHeight / 2 - r - config.pocketRadius * 1.5 - borderPadding);
 
-    // Draw pockets - adjusted for border
+    // Draw pockets - adjusted for border (10 pockets total)
     menuCtx.fillStyle = '#000';
     const tempPockets = [
-        { x: railOffset + r - 5, y: railOffset + r - 5 },                    // Top-left
-        { x: config.tableWidth - r + 5 - railOffset, y: railOffset + r - 5 }, // Top-right
+        { x: railOffset + r - 5, y: railOffset + r - 5 },                    // Top-left corner
+        { x: config.tableWidth * 0.33, y: railOffset + r - 10 },             // Top-left middle
+        { x: config.tableWidth * 0.67, y: railOffset + r - 10 },             // Top-right middle
+        { x: config.tableWidth - r + 5 - railOffset, y: railOffset + r - 5 }, // Top-right corner
         { x: railOffset + r - 10, y: config.tableHeight / 2 },               // Middle-left
         { x: config.tableWidth - r + 10 - railOffset, y: config.tableHeight / 2 }, // Middle-right
-        { x: railOffset + r - 5, y: config.tableHeight - r + 5 - railOffset }, // Bottom-left
-        { x: config.tableWidth - r + 5 - railOffset, y: config.tableHeight - r + 5 - railOffset } // Bottom-right
+        { x: railOffset + r - 5, y: config.tableHeight - r + 5 - railOffset }, // Bottom-left corner
+        { x: config.tableWidth * 0.33, y: config.tableHeight - r + 10 - railOffset }, // Bottom-left middle
+        { x: config.tableWidth * 0.67, y: config.tableHeight - r + 10 - railOffset }, // Bottom-right middle
+        { x: config.tableWidth - r + 5 - railOffset, y: config.tableHeight - r + 5 - railOffset } // Bottom-right corner
     ];
 
     for (const pocket of tempPockets) {
@@ -259,9 +287,9 @@ function drawMenuBackgroundTable2(menuCtx, config) {
         menuCtx.fillStyle = '#000';
     }
 
-    // Diamond markers on rails
+    // Diamond markers on rails (placed between pockets)
     menuCtx.fillStyle = '#FFF';
-    const topBottomDiamonds = [0.15, 0.3, 0.45, 0.55, 0.7, 0.85];
+    const topBottomDiamonds = [0.165, 0.5, 0.835];
     for (const d of topBottomDiamonds) {
         menuCtx.beginPath();
         menuCtx.arc(borderPadding + (config.tableWidth - borderPadding*2) * d, railOffset + r / 2, 3, 0, Math.PI * 2);
@@ -271,7 +299,7 @@ function drawMenuBackgroundTable2(menuCtx, config) {
         menuCtx.fill();
     }
 
-    // Side diamonds
+    // Side diamonds (between corner and middle pockets)
     const sideDiamonds = [0.25, 0.75];
     for (const d of sideDiamonds) {
         menuCtx.beginPath();
