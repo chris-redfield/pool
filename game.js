@@ -431,6 +431,17 @@ function updateStatusMessage() {
     }
 }
 
+// Accordion functionality
+const tableAccordionHeader = document.getElementById('tableAccordionHeader');
+const tableAccordionContent = document.getElementById('tableAccordionContent');
+
+function toggleAccordion() {
+    tableAccordionHeader.classList.toggle('active');
+    tableAccordionContent.classList.toggle('active');
+}
+
+tableAccordionHeader.addEventListener('click', toggleAccordion);
+
 // Table selector event listeners
 function selectTable(tableType) {
     selectedTable = tableType;

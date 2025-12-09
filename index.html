@@ -17,19 +17,6 @@
         <div class="menu-overlay">
             <div class="menu-content">
                 <h1 class="game-title">Pool Game</h1>
-                <div class="table-selector">
-                    <h2 class="selector-title">Select Table</h2>
-                    <div class="table-options">
-                        <button class="table-btn active" id="standardTableBtn" data-table="standard">
-                            <span class="table-name">Standard Table</span>
-                            <span class="table-desc">900 x 500 • Classic layout</span>
-                        </button>
-                        <button class="table-btn" id="elongatedTableBtn" data-table="elongated">
-                            <span class="table-name">Elongated Table</span>
-                            <span class="table-desc">1400 x 500 • Wide layout</span>
-                        </button>
-                    </div>
-                </div>
                 <div class="menu-buttons">
                     <button class="menu-btn" id="twoPlayerBtn">
                         <span class="btn-icon">🎱</span>
@@ -41,6 +28,24 @@
                         <span class="btn-text">Practice</span>
                         <span class="btn-subtitle">Perfect your shots</span>
                     </button>
+                </div>
+                <div class="table-selector-accordion">
+                    <button class="accordion-header" id="tableAccordionHeader">
+                        <span class="accordion-title">Select Table</span>
+                        <span class="accordion-arrow">▼</span>
+                    </button>
+                    <div class="accordion-content" id="tableAccordionContent">
+                        <div class="table-options">
+                            <button class="table-btn active" id="standardTableBtn" data-table="standard">
+                                <span class="table-name">Standard Table</span>
+                                <span class="table-desc">900 x 500 • 6 pockets</span>
+                            </button>
+                            <button class="table-btn" id="elongatedTableBtn" data-table="elongated">
+                                <span class="table-name">Elongated Table</span>
+                                <span class="table-desc">1400 x 500 • 10 pockets</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
