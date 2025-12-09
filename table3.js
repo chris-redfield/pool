@@ -1,16 +1,16 @@
-// Cross-Shaped Table Configuration with Modular Square System
-// This uses a modular approach where the table is built from rectangular sections
+// Cross-Shaped Table Configuration
+// Adjusted to include distinct Wood and Cushion layers within the rail space
 
 const TABLE3_CONFIG = {
     // Individual module dimensions
     moduleWidth: 400,
     moduleHeight: 300,
 
-    // Overall table dimensions (for canvas sizing)
-    tableWidth: 1200,   // 3 modules wide (left arm + center + right arm)
-    tableHeight: 900,   // 3 modules tall (top arm + center + bottom arm)
+    // Overall table dimensions
+    tableWidth: 1200,
+    tableHeight: 900,
 
-    railSize: 25,
+    railSize: 25, // Total width of the non-playable border (Wood + Cushion)
     pocketRadius: 22,
     ballRadius: 12,
     friction: 0.985,
@@ -20,81 +20,89 @@ const TABLE3_CONFIG = {
     deadZone: 35
 };
 
-// Initialize pockets for cross table (12 pockets - 3 at each arm end)
+// Initialize pockets for cross table
 function initPocketsTable3() {
     const r = TABLE3_CONFIG.railSize;
     const offset = 5;
 
     return [
-        // Top arm pockets (at y=0)
-        { x: 400 + r - offset, y: r - offset },                    // Top-left corner
-        { x: 600, y: r - offset - 5 },                             // Top-middle
-        { x: 800 - r + offset, y: r - offset },                    // Top-right corner
+        // Top arm pockets
+        { x: 400 + r - offset, y: r - offset },
+        { x: 600, y: r - offset - 5 },
+        { x: 800 - r + offset, y: r - offset },
 
-        // Right arm pockets (at x=1200)
-        { x: 1200 - r + offset, y: 300 + r - offset },             // Right-top corner
-        { x: 1200 - r + offset + 5, y: 450 },                      // Right-middle
-        { x: 1200 - r + offset, y: 600 - r + offset },             // Right-bottom corner
+        // Right arm pockets
+        { x: 1200 - r + offset, y: 300 + r - offset },
+        { x: 1200 - r + offset + 5, y: 450 },
+        { x: 1200 - r + offset, y: 600 - r + offset },
 
-        // Bottom arm pockets (at y=900)
-        { x: 800 - r + offset, y: 900 - r + offset },              // Bottom-right corner
-        { x: 600, y: 900 - r + offset + 5 },                       // Bottom-middle
-        { x: 400 + r - offset, y: 900 - r + offset },              // Bottom-left corner
+        // Bottom arm pockets
+        { x: 800 - r + offset, y: 900 - r + offset },
+        { x: 600, y: 900 - r + offset + 5 },
+        { x: 400 + r - offset, y: 900 - r + offset },
 
-        // Left arm pockets (at x=0)
-        { x: r - offset, y: 600 - r + offset },                    // Left-bottom corner
-        { x: r - offset - 5, y: 450 },                             // Left-middle
-        { x: r - offset, y: 300 + r - offset }                     // Left-top corner
+        // Left arm pockets
+        { x: r - offset, y: 600 - r + offset },
+        { x: r - offset - 5, y: 450 },
+        { x: r - offset, y: 300 + r - offset }
     ];
 }
 
-// Helper to draw the cross polygon
+// Helper to draw the cross polygon shape at a specific offset (inset)
 function traceCrossPath(ctx, offset = 0) {
     ctx.beginPath();
     // Top Arm
     ctx.moveTo(400 + offset, 0 + offset);
     ctx.lineTo(800 - offset, 0 + offset);
-    ctx.lineTo(800 - offset, 300 + offset); // Inner corner top-right
+    ctx.lineTo(800 - offset, 300 + offset); // Inner corner
     
     // Right Arm
     ctx.lineTo(1200 - offset, 300 + offset);
     ctx.lineTo(1200 - offset, 600 - offset);
-    ctx.lineTo(800 - offset, 600 - offset); // Inner corner bottom-right
+    ctx.lineTo(800 - offset, 600 - offset); // Inner corner
     
     // Bottom Arm
     ctx.lineTo(800 - offset, 900 - offset);
     ctx.lineTo(400 + offset, 900 - offset);
-    ctx.lineTo(400 + offset, 600 - offset); // Inner corner bottom-left
+    ctx.lineTo(400 + offset, 600 - offset); // Inner corner
     
     // Left Arm
     ctx.lineTo(0 + offset, 600 - offset);
     ctx.lineTo(0 + offset, 300 + offset);
-    ctx.lineTo(400 + offset, 300 + offset); // Inner corner top-left
+    ctx.lineTo(400 + offset, 300 + offset); // Inner corner
     
     ctx.closePath();
 }
 
-// Draw the complete cross-shaped table
 function drawTable3(ctx, config) {
-    const r = config.railSize;
+    const r = config.railSize; // 25px total border
+    const woodThickness = 10;  // 10px Wood
+    // Remainder (15px) is the Dark Green Cushion
 
-    // 1. Draw the Wood Base (The Rails)
-    // We draw the full cross shape in wood color
+    // 1. Draw the Wood Frame (The Base)
+    // Offset 0: Fills the entire shape
     const woodGradient = ctx.createLinearGradient(0, 0, config.tableWidth, config.tableHeight);
     woodGradient.addColorStop(0, '#8B4513');
     woodGradient.addColorStop(0.5, '#654321');
     woodGradient.addColorStop(1, '#8B4513');
     
     ctx.fillStyle = woodGradient;
-    traceCrossPath(ctx, 0); // No offset = outer edge
+    traceCrossPath(ctx, 0);
     ctx.fill();
 
-    // 2. Draw the Green Felt (Inset by rail size)
+    // 2. Draw the Dark Green Cushion
+    // Offset by 'woodThickness' (10px). This sits on top of the wood.
+    ctx.fillStyle = '#0a5c2e'; 
+    traceCrossPath(ctx, woodThickness);
+    ctx.fill();
+
+    // 3. Draw the Green Felt (Playable Area)
+    // Offset by 'r' (25px). This matches the physics walls.
     ctx.fillStyle = '#0d7a3e';
-    traceCrossPath(ctx, r); // Offset by rail size
+    traceCrossPath(ctx, r);
     ctx.fill();
 
-    // 3. Add felt texture gradient (masked to the inner area)
+    // 4. Add felt texture gradient (masked to the inner area)
     ctx.save();
     traceCrossPath(ctx, r);
     ctx.clip();
@@ -108,14 +116,10 @@ function drawTable3(ctx, config) {
     ctx.fillRect(0, 0, config.tableWidth, config.tableHeight);
     ctx.restore();
 
-    // 4. Draw Inner Corner rounded details (optional visuals to make rails look joined)
-    // We draw small squares at the inner corners to connect the rails sharply
-    ctx.fillStyle = '#0a5c2e'; // Darker rail color
-    
     // 5. Draw Pockets
     const pockets = initPocketsTable3();
     
-    // Pocket outer shadows/holes
+    // Pocket holes
     ctx.fillStyle = '#000';
     for (const pocket of pockets) {
         ctx.beginPath();
@@ -123,7 +127,7 @@ function drawTable3(ctx, config) {
         ctx.fill();
     }
 
-    // Pocket inner depth
+    // Pocket inner depth/shadow
     for (const pocket of pockets) {
         const shadowGradient = ctx.createRadialGradient(
             pocket.x, pocket.y, config.pocketRadius * 0.5,
@@ -138,16 +142,24 @@ function drawTable3(ctx, config) {
     }
 
     // 6. Draw diamond markers
+    // Placed in the cushion area (between wood and felt)
     ctx.fillStyle = '#FFF';
+    const markerOffset = woodThickness + (r - woodThickness) / 2; // Middle of the cushion
+
+    // Define points for diamonds relative to the cross shape
+    // REMOVED the middle diamonds that were overlapping pockets (similar to table2.js logic)
     const diamonds = [
-        // Top arm
-        { x: 500, y: r / 2 }, { x: 600, y: r / 2 }, { x: 700, y: r / 2 },
-        // Right arm
-        { x: 1200 - r / 2, y: 375 }, { x: 1200 - r / 2, y: 450 }, { x: 1200 - r / 2, y: 525 },
-        // Bottom arm
-        { x: 500, y: 900 - r / 2 }, { x: 600, y: 900 - r / 2 }, { x: 700, y: 900 - r / 2 },
-        // Left arm
-        { x: r / 2, y: 375 }, { x: r / 2, y: 450 }, { x: r / 2, y: 525 }
+        // Top arm (Removed middle at x=600)
+        { x: 500, y: markerOffset }, { x: 700, y: markerOffset },
+        
+        // Right arm (Removed middle at y=450)
+        { x: 1200 - markerOffset, y: 375 }, { x: 1200 - markerOffset, y: 525 },
+        
+        // Bottom arm (Removed middle at x=600)
+        { x: 500, y: 900 - markerOffset }, { x: 700, y: 900 - markerOffset },
+        
+        // Left arm (Removed middle at y=450)
+        { x: markerOffset, y: 375 }, { x: markerOffset, y: 525 }
     ];
 
     for (const diamond of diamonds) {
@@ -213,7 +225,7 @@ function drawMenuBackgroundTable3(menuCtx, config) {
     // Clear canvas
     menuCtx.clearRect(0, 0, config.tableWidth, config.tableHeight);
     
-    // Draw the table structure using the same logic as the main game
+    // Draw the table structure using the main drawing function
     drawTable3(menuCtx, config);
 
     // Add decorative balls
