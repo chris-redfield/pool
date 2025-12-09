@@ -7,9 +7,10 @@ const practiceBtn = document.getElementById('practiceBtn');
 const backToMenuBtn = document.getElementById('backToMenu');
 const standardTableBtn = document.getElementById('standardTableBtn');
 const elongatedTableBtn = document.getElementById('elongatedTableBtn');
+const crossTableBtn = document.getElementById('crossTableBtn');
 
 // Table selection
-let selectedTable = 'standard'; // 'standard' or 'elongated'
+let selectedTable = 'standard'; // 'standard', 'elongated', or 'cross'
 
 // Game elements
 const canvas = document.getElementById('gameCanvas');
@@ -36,7 +37,9 @@ const CONFIG = {
 
 // Get current table configuration
 function getCurrentConfig() {
-    return selectedTable === 'elongated' ? TABLE2_CONFIG : CONFIG;
+    if (selectedTable === 'elongated') return TABLE2_CONFIG;
+    if (selectedTable === 'cross') return TABLE3_CONFIG;
+    return CONFIG;
 }
 
 // Responsive scaling
@@ -196,6 +199,10 @@ function drawMenuBackground() {
     // Use table-specific drawing function
     if (selectedTable === 'elongated') {
         drawMenuBackgroundTable2(menuCtx, currentConfig);
+        return;
+    }
+    if (selectedTable === 'cross') {
+        drawMenuBackgroundTable3(menuCtx, currentConfig);
         return;
     }
 
@@ -449,6 +456,25 @@ function selectTable(tableType) {
     // Update UI
     standardTableBtn.classList.toggle('active', tableType === 'standard');
     elongatedTableBtn.classList.toggle('active', tableType === 'elongated');
+    crossTableBtn.classList.toggle('active', tableType === 'cross');
+
+    // Handle container styling for non-rectangular tables
+    const container = document.getElementById('tableContainer');
+    const gameCanvas = document.getElementById('gameCanvas');
+    
+    if (tableType === 'cross') {
+        // Remove the standard wood box background for the cross table
+        // so the transparency of the canvas shows through
+        container.style.background = 'transparent';
+        container.style.boxShadow = 'none';
+        // Add drop shadow to canvas to maintain depth
+        gameCanvas.style.filter = 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))';
+    } else {
+        // Restore standard look
+        container.style.background = 'linear-gradient(145deg, #8B4513, #654321)';
+        container.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.1)';
+        gameCanvas.style.filter = 'none';
+    }
 
     // Redraw menu canvas with new table
     initMenuCanvas();
@@ -456,6 +482,7 @@ function selectTable(tableType) {
 
 standardTableBtn.addEventListener('click', () => selectTable('standard'));
 elongatedTableBtn.addEventListener('click', () => selectTable('elongated'));
+crossTableBtn.addEventListener('click', () => selectTable('cross'));
 
 // Menu event listeners
 twoPlayerBtn.addEventListener('click', () => startGame('twoPlayer'));
@@ -466,6 +493,10 @@ backToMenuBtn.addEventListener('click', showMenu);
 function initPockets() {
     if (selectedTable === 'elongated') {
         pockets = initPocketsTable2();
+        return;
+    }
+    if (selectedTable === 'cross') {
+        pockets = initPocketsTable3();
         return;
     }
 
@@ -490,6 +521,11 @@ function initBalls() {
 
     if (selectedTable === 'elongated') {
         balls = initBallsTable2(currentConfig);
+        pocketedBalls = [];
+        return;
+    }
+    if (selectedTable === 'cross') {
+        balls = initBallsTable3(currentConfig);
         pocketedBalls = [];
         return;
     }
@@ -553,6 +589,10 @@ function drawTable() {
     // Use table-specific drawing function
     if (selectedTable === 'elongated') {
         drawTable2(ctx, currentConfig);
+        return;
+    }
+    if (selectedTable === 'cross') {
+        drawTable3(ctx, currentConfig);
         return;
     }
 
@@ -1005,7 +1045,7 @@ function checkWallCollision(ball) {
     const r = currentConfig.ballRadius;
     const rail = currentConfig.railSize;
 
-    // Check if near a pocket
+    // Check if near a pocket (standard check)
     for (const pocket of pockets) {
         const dx = ball.x - pocket.x;
         const dy = ball.y - pocket.y;
@@ -1025,6 +1065,91 @@ function checkWallCollision(ball) {
         }
     }
 
+    // Cross table has special collision zones
+    if (selectedTable === 'cross') {
+        // We define the bounding box of the inner playing area (green felt)
+        // The "Wall" is at coord: 0 + rail, 400 + rail, etc.
+        
+        // Horizontal Walls (Top and Bottom of arms)
+        
+        // Top Arm Top Wall (y=0)
+        if (ball.y < rail + r && ball.x >= 400 && ball.x <= 800) {
+            ball.y = rail + r;
+            ball.vy = Math.abs(ball.vy) * 0.8;
+        }
+        
+        // Bottom Arm Bottom Wall (y=900)
+        if (ball.y > 900 - rail - r && ball.x >= 400 && ball.x <= 800) {
+            ball.y = 900 - rail - r;
+            ball.vy = -Math.abs(ball.vy) * 0.8;
+        }
+
+        // Left Arm Top Wall (y=300)
+        if (ball.y < 300 + rail + r && ball.x <= 400 && ball.y > 150) { // y > 150 check prevents interference with Top Arm
+             ball.y = 300 + rail + r;
+             ball.vy = Math.abs(ball.vy) * 0.8;
+        }
+        
+        // Left Arm Bottom Wall (y=600)
+        if (ball.y > 600 - rail - r && ball.x <= 400 && ball.y < 750) {
+             ball.y = 600 - rail - r;
+             ball.vy = -Math.abs(ball.vy) * 0.8;
+        }
+        
+        // Right Arm Top Wall (y=300)
+        if (ball.y < 300 + rail + r && ball.x >= 800 && ball.y > 150) {
+             ball.y = 300 + rail + r;
+             ball.vy = Math.abs(ball.vy) * 0.8;
+        }
+        
+        // Right Arm Bottom Wall (y=600)
+        if (ball.y > 600 - rail - r && ball.x >= 800 && ball.y < 750) {
+             ball.y = 600 - rail - r;
+             ball.vy = -Math.abs(ball.vy) * 0.8;
+        }
+
+        // Vertical Walls (Left and Right of arms)
+        
+        // Left Arm Left Wall (x=0)
+        if (ball.x < rail + r && ball.y >= 300 && ball.y <= 600) {
+            ball.x = rail + r;
+            ball.vx = Math.abs(ball.vx) * 0.8;
+        }
+        
+        // Right Arm Right Wall (x=1200)
+        if (ball.x > 1200 - rail - r && ball.y >= 300 && ball.y <= 600) {
+            ball.x = 1200 - rail - r;
+            ball.vx = -Math.abs(ball.vx) * 0.8;
+        }
+
+        // Top Arm Left Wall (x=400)
+        if (ball.x < 400 + rail + r && ball.y <= 300 && ball.x > 200) {
+            ball.x = 400 + rail + r;
+            ball.vx = Math.abs(ball.vx) * 0.8;
+        }
+        
+        // Top Arm Right Wall (x=800)
+        if (ball.x > 800 - rail - r && ball.y <= 300 && ball.x < 1000) {
+            ball.x = 800 - rail - r;
+            ball.vx = -Math.abs(ball.vx) * 0.8;
+        }
+        
+        // Bottom Arm Left Wall (x=400)
+        if (ball.x < 400 + rail + r && ball.y >= 600 && ball.x > 200) {
+            ball.x = 400 + rail + r;
+            ball.vx = Math.abs(ball.vx) * 0.8;
+        }
+        
+        // Bottom Arm Right Wall (x=800)
+        if (ball.x > 800 - rail - r && ball.y >= 600 && ball.x < 1000) {
+            ball.x = 800 - rail - r;
+            ball.vx = -Math.abs(ball.vx) * 0.8;
+        }
+
+        return;
+    }
+
+    // Standard rectangular table collision
     // Left wall
     if (ball.x - r < rail) {
         ball.x = rail + r;
@@ -1103,26 +1228,53 @@ function drawDebug() {
     ctx.lineWidth = 2;
     ctx.setLineDash([]);
 
-    // Wall boundaries
-    ctx.beginPath();
-    ctx.moveTo(rail + r, 0);
-    ctx.lineTo(rail + r, currentConfig.tableHeight);
-    ctx.stroke();
+    // Cross table has different boundaries
+    if (selectedTable === 'cross') {
+        const offset = rail + r;
+        
+        // Draw the inner playable area boundary
+        ctx.beginPath();
+        // Top Arm
+        ctx.moveTo(400 + offset, 0 + offset);
+        ctx.lineTo(800 - offset, 0 + offset);
+        ctx.lineTo(800 - offset, 300 + offset);
+        // Right Arm
+        ctx.lineTo(1200 - offset, 300 + offset);
+        ctx.lineTo(1200 - offset, 600 - offset);
+        ctx.lineTo(800 - offset, 600 - offset);
+        // Bottom Arm
+        ctx.lineTo(800 - offset, 900 - offset);
+        ctx.lineTo(400 + offset, 900 - offset);
+        ctx.lineTo(400 + offset, 600 - offset);
+        // Left Arm
+        ctx.lineTo(0 + offset, 600 - offset);
+        ctx.lineTo(0 + offset, 300 + offset);
+        ctx.lineTo(400 + offset, 300 + offset);
+        
+        ctx.closePath();
+        ctx.stroke();
+    } else {
+        // Standard rectangular wall boundaries
+        ctx.beginPath();
+        ctx.moveTo(rail + r, 0);
+        ctx.lineTo(rail + r, currentConfig.tableHeight);
+        ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(currentConfig.tableWidth - rail - r, 0);
-    ctx.lineTo(currentConfig.tableWidth - rail - r, currentConfig.tableHeight);
-    ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(currentConfig.tableWidth - rail - r, 0);
+        ctx.lineTo(currentConfig.tableWidth - rail - r, currentConfig.tableHeight);
+        ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(0, rail + r);
-    ctx.lineTo(currentConfig.tableWidth, rail + r);
-    ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, rail + r);
+        ctx.lineTo(currentConfig.tableWidth, rail + r);
+        ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(0, currentConfig.tableHeight - rail - r);
-    ctx.lineTo(currentConfig.tableWidth, currentConfig.tableHeight - rail - r);
-    ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, currentConfig.tableHeight - rail - r);
+        ctx.lineTo(currentConfig.tableWidth, currentConfig.tableHeight - rail - r);
+        ctx.stroke();
+    }
 
     // Pocket zones
     ctx.strokeStyle = '#ffff00';
