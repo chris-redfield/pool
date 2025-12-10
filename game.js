@@ -1278,7 +1278,7 @@ function drawDebug() {
     // Cross table has different boundaries
     if (selectedTable === 'cross') {
         const offset = rail + r;
-        
+
         // Draw the inner playable area boundary
         ctx.beginPath();
         // Top Arm
@@ -1297,8 +1297,49 @@ function drawDebug() {
         ctx.lineTo(0 + offset, 600 - offset);
         ctx.lineTo(0 + offset, 300 + offset);
         ctx.lineTo(400 + offset, 300 + offset);
-        
+
         ctx.closePath();
+        ctx.stroke();
+    } else if (selectedTable === 'donut') {
+        const offset = rail + r;
+        const hole = currentConfig.innerHole;
+
+        // Outer rectangular boundary
+        ctx.beginPath();
+        ctx.moveTo(offset, offset);
+        ctx.lineTo(currentConfig.tableWidth - offset, offset);
+        ctx.lineTo(currentConfig.tableWidth - offset, currentConfig.tableHeight - offset);
+        ctx.lineTo(offset, currentConfig.tableHeight - offset);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Inner hole rails - OUTSIDE the hole on the bright green felt
+        // Rails positioned just outside the hole edge, on the felt with offset
+        // Extended to meet at corners forming a complete rectangle
+        const innerOffset = r; // Ball radius offset from hole edge
+
+        // Top rail (horizontal line ABOVE the hole - extends to meet vertical rails)
+        ctx.beginPath();
+        ctx.moveTo(hole.x - innerOffset, hole.y - innerOffset);
+        ctx.lineTo(hole.x + hole.width + innerOffset, hole.y - innerOffset);
+        ctx.stroke();
+
+        // Bottom rail (horizontal line BELOW the hole - extends to meet vertical rails)
+        ctx.beginPath();
+        ctx.moveTo(hole.x - innerOffset, hole.y + hole.height + innerOffset);
+        ctx.lineTo(hole.x + hole.width + innerOffset, hole.y + hole.height + innerOffset);
+        ctx.stroke();
+
+        // Left rail (vertical line LEFT of the hole - extends to meet horizontal rails)
+        ctx.beginPath();
+        ctx.moveTo(hole.x - innerOffset, hole.y - innerOffset);
+        ctx.lineTo(hole.x - innerOffset, hole.y + hole.height + innerOffset);
+        ctx.stroke();
+
+        // Right rail (vertical line RIGHT of the hole - extends to meet horizontal rails)
+        ctx.beginPath();
+        ctx.moveTo(hole.x + hole.width + innerOffset, hole.y - innerOffset);
+        ctx.lineTo(hole.x + hole.width + innerOffset, hole.y + hole.height + innerOffset);
         ctx.stroke();
     } else {
         // Standard rectangular wall boundaries
