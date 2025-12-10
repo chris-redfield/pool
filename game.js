@@ -85,48 +85,8 @@ function calculateResponsiveSize() {
     return scale;
 }
 
-// Zoom functionality
-let currentZoom = 1;
-const minZoom = 0.5;
-const maxZoom = 3;
-
-function setZoom(newZoom) {
-    currentZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
-    tableContainer.style.transform = `scale(${currentZoom})`;
-    document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%';
-}
-
-// Zoom buttons
-document.getElementById('zoomIn').addEventListener('click', () => setZoom(currentZoom + 0.2));
-document.getElementById('zoomOut').addEventListener('click', () => setZoom(currentZoom - 0.2));
-document.getElementById('zoomReset').addEventListener('click', () => setZoom(1));
-
-// Pinch-to-zoom handling
-let initialPinchDistance = 0;
-let initialZoom = 1;
-
-function getDistance(touches) {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-tableWrapper.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-        e.preventDefault();
-        initialPinchDistance = getDistance(e.touches);
-        initialZoom = currentZoom;
-    }
-}, { passive: false });
-
-tableWrapper.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2) {
-        e.preventDefault();
-        const currentDistance = getDistance(e.touches);
-        const zoomDelta = currentDistance / initialPinchDistance;
-        setZoom(initialZoom * zoomDelta);
-    }
-}, { passive: false });
+// Custom zoom removed - using browser native zoom only (Ctrl+Scroll or browser zoom)
+// This prevents cropping issues and improves performance
 
 // Ball colors for standard 8-ball
 const BALL_COLORS = {

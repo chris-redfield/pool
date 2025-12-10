@@ -206,10 +206,6 @@ body {
         height: 10px;
     }
 
-    .zoom-controls {
-        display: flex;
-    }
-
     .instructions {
         font-size: 11px;
     }
