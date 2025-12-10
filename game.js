@@ -51,7 +51,9 @@ function calculateResponsiveSize() {
     const wrapper = tableWrapper;
     const containerPadding = window.innerWidth <= 480 ? 6 : (window.innerWidth <= 768 ? 10 : 20);
     const availableWidth = wrapper.clientWidth - (containerPadding * 2);
-    const availableHeight = window.innerHeight * 0.65;
+    // Give cross table more viewport space since it's larger (1200x900)
+    const heightPercentage = selectedTable === 'cross' ? 0.75 : 0.65;
+    const availableHeight = window.innerHeight * heightPercentage;
 
     const widthScale = availableWidth / currentConfig.tableWidth;
     const heightScale = availableHeight / currentConfig.tableHeight;
@@ -467,8 +469,8 @@ function selectTable(tableType) {
         // so the transparency of the canvas shows through
         container.style.background = 'transparent';
         container.style.boxShadow = 'none';
-        // Add drop shadow to canvas to maintain depth
-        gameCanvas.style.filter = 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))';
+        // Drop shadow removed to improve zoom/touch responsiveness
+        gameCanvas.style.filter = 'none';
     } else {
         // Restore standard look
         container.style.background = 'linear-gradient(145deg, #8B4513, #654321)';
