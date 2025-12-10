@@ -8,6 +8,7 @@ const backToMenuBtn = document.getElementById('backToMenu');
 const standardTableBtn = document.getElementById('standardTableBtn');
 const elongatedTableBtn = document.getElementById('elongatedTableBtn');
 const crossTableBtn = document.getElementById('crossTableBtn');
+const donutTableBtn = document.getElementById('donutTableBtn');
 
 // Table selection
 let selectedTable = 'standard'; // 'standard', 'elongated', or 'cross'
@@ -39,6 +40,7 @@ const CONFIG = {
 function getCurrentConfig() {
     if (selectedTable === 'elongated') return TABLE2_CONFIG;
     if (selectedTable === 'cross') return TABLE3_CONFIG;
+    if (selectedTable === 'donut') return TABLE4_CONFIG;
     return CONFIG;
 }
 
@@ -165,6 +167,10 @@ function drawMenuBackground() {
     }
     if (selectedTable === 'cross') {
         drawMenuBackgroundTable3(menuCtx, currentConfig);
+        return;
+    }
+    if (selectedTable === 'donut') {
+        drawMenuBackgroundTable4(menuCtx, currentConfig);
         return;
     }
 
@@ -419,13 +425,14 @@ function selectTable(tableType) {
     standardTableBtn.classList.toggle('active', tableType === 'standard');
     elongatedTableBtn.classList.toggle('active', tableType === 'elongated');
     crossTableBtn.classList.toggle('active', tableType === 'cross');
+    donutTableBtn.classList.toggle('active', tableType === 'donut');
 
     // Handle container styling for non-rectangular tables
     const container = document.getElementById('tableContainer');
     const gameCanvas = document.getElementById('gameCanvas');
-    
-    if (tableType === 'cross') {
-        // Remove the standard wood box background for the cross table
+
+    if (tableType === 'cross' || tableType === 'donut') {
+        // Remove the standard wood box background for non-rectangular tables
         // so the transparency of the canvas shows through
         container.style.background = 'transparent';
         container.style.boxShadow = 'none';
@@ -445,6 +452,7 @@ function selectTable(tableType) {
 standardTableBtn.addEventListener('click', () => selectTable('standard'));
 elongatedTableBtn.addEventListener('click', () => selectTable('elongated'));
 crossTableBtn.addEventListener('click', () => selectTable('cross'));
+donutTableBtn.addEventListener('click', () => selectTable('donut'));
 
 // Menu event listeners
 twoPlayerBtn.addEventListener('click', () => startGame('twoPlayer'));
@@ -459,6 +467,10 @@ function initPockets() {
     }
     if (selectedTable === 'cross') {
         pockets = initPocketsTable3();
+        return;
+    }
+    if (selectedTable === 'donut') {
+        pockets = initPocketsTable4();
         return;
     }
 
@@ -488,6 +500,11 @@ function initBalls() {
     }
     if (selectedTable === 'cross') {
         balls = initBallsTable3(currentConfig);
+        pocketedBalls = [];
+        return;
+    }
+    if (selectedTable === 'donut') {
+        balls = initBallsTable4(currentConfig);
         pocketedBalls = [];
         return;
     }
@@ -555,6 +572,10 @@ function drawTable() {
     }
     if (selectedTable === 'cross') {
         drawTable3(ctx, currentConfig);
+        return;
+    }
+    if (selectedTable === 'donut') {
+        drawTable4(ctx, currentConfig);
         return;
     }
 
@@ -1106,6 +1127,70 @@ function checkWallCollision(ball) {
         if (ball.x > 800 - rail - r && ball.y >= 600 && ball.x < 1000) {
             ball.x = 800 - rail - r;
             ball.vx = -Math.abs(ball.vx) * 0.8;
+        }
+
+        return;
+    }
+
+    // Donut table has special collision zones (outer walls + inner hole)
+    if (selectedTable === 'donut') {
+        const hole = currentConfig.innerHole;
+
+        // Outer walls (standard rectangular)
+        // Left wall
+        if (ball.x - r < rail) {
+            ball.x = rail + r;
+            ball.vx = -ball.vx * 0.8;
+        }
+        // Right wall
+        if (ball.x + r > currentConfig.tableWidth - rail) {
+            ball.x = currentConfig.tableWidth - rail - r;
+            ball.vx = -ball.vx * 0.8;
+        }
+        // Top wall
+        if (ball.y - r < rail) {
+            ball.y = rail + r;
+            ball.vy = -ball.vy * 0.8;
+        }
+        // Bottom wall
+        if (ball.y + r > currentConfig.tableHeight - rail) {
+            ball.y = currentConfig.tableHeight - rail - r;
+            ball.vy = -ball.vy * 0.8;
+        }
+
+        // Inner hole walls - ball bounces off the hole edges
+        // Check if ball is inside or near the hole boundaries
+        const holeLeft = hole.x + rail;
+        const holeRight = hole.x + hole.width - rail;
+        const holeTop = hole.y + rail;
+        const holeBottom = hole.y + hole.height - rail;
+
+        // Ball is in the vicinity of the hole
+        if (ball.x + r > holeLeft && ball.x - r < holeRight &&
+            ball.y + r > holeTop && ball.y - r < holeBottom) {
+
+            // Determine which wall of the hole is closest
+            const distToLeft = Math.abs(ball.x - holeLeft);
+            const distToRight = Math.abs(ball.x - holeRight);
+            const distToTop = Math.abs(ball.y - holeTop);
+            const distToBottom = Math.abs(ball.y - holeBottom);
+
+            const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+
+            // Bounce off the closest wall
+            if (minDist === distToLeft && ball.vx > 0) {
+                ball.x = holeLeft - r;
+                ball.vx = -ball.vx * 0.8;
+            } else if (minDist === distToRight && ball.vx < 0) {
+                ball.x = holeRight + r;
+                ball.vx = -ball.vx * 0.8;
+            } else if (minDist === distToTop && ball.vy > 0) {
+                ball.y = holeTop - r;
+                ball.vy = -ball.vy * 0.8;
+            } else if (minDist === distToBottom && ball.vy < 0) {
+                ball.y = holeBottom + r;
+                ball.vy = -ball.vy * 0.8;
+            }
         }
 
         return;

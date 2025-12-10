@@ -5,15 +5,12 @@
 }
 
 body {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
     min-height: 100vh;
     min-height: 100dvh;
     background: #1a1a2e;
     font-family: 'Georgia', serif;
     padding: 10px;
-    /* overflow-x: hidden removed - allows horizontal scrolling when zoomed in */
+    /* Removed flex - using simple block layout for proper overflow scrolling */
 }
 
 .game-container {
@@ -21,8 +18,10 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    width: 100%;
+    width: fit-content;  /* Shrink to content size */
+    min-width: 100%;      /* But at least full width when small */
     padding-top: 10px;
+    margin: 0 auto;       /* Center horizontally */
 }
 
 .info-bar {
