@@ -431,15 +431,14 @@ function selectTable(tableType) {
     const container = document.getElementById('tableContainer');
     const gameCanvas = document.getElementById('gameCanvas');
 
-    if (tableType === 'cross' || tableType === 'donut') {
-        // Remove the standard wood box background for non-rectangular tables
+    if (tableType === 'cross') {
+        // Remove the standard wood box background for cross table
         // so the transparency of the canvas shows through
         container.style.background = 'transparent';
         container.style.boxShadow = 'none';
-        // Drop shadow removed to improve zoom/touch responsiveness
         gameCanvas.style.filter = 'none';
     } else {
-        // Restore standard look
+        // Restore standard look (for standard, elongated, and donut tables)
         container.style.background = 'linear-gradient(145deg, #8B4513, #654321)';
         container.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.1)';
         gameCanvas.style.filter = 'none';

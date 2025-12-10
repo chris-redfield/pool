@@ -122,7 +122,7 @@ function drawTable4(ctx, config) {
     const woodThickness = 10;
     const hole = config.innerHole;
 
-    // 1. Draw wood frame background
+    // 1. Draw wood frame background for OUTER table
     const woodGradient = ctx.createLinearGradient(0, 0, config.tableWidth, config.tableHeight);
     woodGradient.addColorStop(0, '#8B4513');
     woodGradient.addColorStop(0.5, '#654321');
@@ -131,11 +131,7 @@ function drawTable4(ctx, config) {
     ctx.fillStyle = woodGradient;
     ctx.fillRect(0, 0, config.tableWidth, config.tableHeight);
 
-    // Cut out the inner hole from wood (make it transparent/background)
-    ctx.fillStyle = '#1a1a2e'; // Match body background
-    ctx.fillRect(hole.x, hole.y, hole.width, hole.height);
-
-    // 2. Draw dark green cushion layer (on outer frame)
+    // 2. Draw dark green cushion layer (outer rails)
     ctx.fillStyle = '#0a5c2e';
     // Outer cushion
     ctx.fillRect(woodThickness, woodThickness,
@@ -156,20 +152,16 @@ function drawTable4(ctx, config) {
     ctx.fillStyle = '#1a1a2e'; // Background color
     ctx.fillRect(hole.x, hole.y, hole.width, hole.height);
 
-    // Now draw inner hole cushion OVER the background (darker green rails)
+    // Now draw inner hole cushion directly at hole edges (no wood border)
     ctx.fillStyle = '#0a5c2e';
-    // Top cushion of hole
-    ctx.fillRect(hole.x + woodThickness, hole.y + woodThickness,
-                 hole.width - woodThickness * 2, r - woodThickness);
-    // Bottom cushion of hole
-    ctx.fillRect(hole.x + woodThickness, hole.y + hole.height - r,
-                 hole.width - woodThickness * 2, r - woodThickness);
-    // Left cushion of hole
-    ctx.fillRect(hole.x + woodThickness, hole.y + woodThickness,
-                 r - woodThickness, hole.height - woodThickness * 2);
-    // Right cushion of hole
-    ctx.fillRect(hole.x + hole.width - r, hole.y + woodThickness,
-                 r - woodThickness, hole.height - woodThickness * 2);
+    // Top cushion of hole - starts right at hole edge
+    ctx.fillRect(hole.x, hole.y, hole.width, r);
+    // Bottom cushion of hole - starts right at hole edge
+    ctx.fillRect(hole.x, hole.y + hole.height - r, hole.width, r);
+    // Left cushion of hole - starts right at hole edge
+    ctx.fillRect(hole.x, hole.y, r, hole.height);
+    // Right cushion of hole - starts right at hole edge
+    ctx.fillRect(hole.x + hole.width - r, hole.y, r, hole.height);
 
     // 4. Add felt texture gradient
     ctx.save();
