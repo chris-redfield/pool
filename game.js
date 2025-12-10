@@ -1464,14 +1464,18 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Responsive resize
-function handleResize() {
-    calculateResponsiveSize();
-}
+// handleResize removed - was preventing browser zoom from working
+// Responsive sizing now only happens once on game initialization
+// This allows browser native zoom to work properly
 
-window.addEventListener('resize', handleResize);
-window.addEventListener('orientationchange', () => {
-    setTimeout(handleResize, 100);
-});
+// function handleResize() {
+//     calculateResponsiveSize();
+// }
+
+// window.addEventListener('resize', handleResize);
+// window.addEventListener('orientationchange', () => {
+//     setTimeout(handleResize, 100);
+// });
 
 // Show appropriate instructions
 function updateInstructions() {
@@ -1487,12 +1491,12 @@ function initializeGame() {
     calculateResponsiveSize();
     updateInstructions();
     window.addEventListener('resize', updateInstructions);
+    // Resize listener for menu only - removed game resize to allow browser zoom to work
     window.addEventListener('resize', () => {
         if (gameState === 'menu') {
             initMenuCanvas();
-        } else {
-            handleResize();
         }
+        // handleResize() removed - was preventing browser zoom from working
     });
 }
 
