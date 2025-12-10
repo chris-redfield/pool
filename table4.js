@@ -148,11 +148,37 @@ function drawTable4(ctx, config) {
     // Outer playable area (with hole cut out)
     ctx.fillRect(r, r, config.tableWidth - r * 2, config.tableHeight - r * 2);
 
-    // Cut out the inner hole completely (to background)
-    ctx.fillStyle = '#1a1a2e'; // Background color
-    ctx.fillRect(hole.x, hole.y, hole.width, hole.height);
+    // Create wooden frame INSIDE the donut hole (frame effect with hollow center)
+    const holeWoodGradient = ctx.createLinearGradient(
+        hole.x, hole.y,
+        hole.x + hole.width, hole.y + hole.height
+    );
+    holeWoodGradient.addColorStop(0, '#8B4513');   // Same as outer wood
+    holeWoodGradient.addColorStop(0.5, '#654321');
+    holeWoodGradient.addColorStop(1, '#8B4513');
 
-    // Now draw inner hole cushion directly at hole edges (no wood border)
+    // Draw rounded wooden rectangle
+    const holeRadius = 15;
+    ctx.fillStyle = holeWoodGradient;
+    ctx.beginPath();
+    ctx.roundRect(hole.x, hole.y, hole.width, hole.height, holeRadius);
+    ctx.fill();
+
+    // Cut out the center to create frame effect (hollow center)
+    // Match the visual thickness of outer border including container padding
+    // Outer border appears thick due to: container padding (20px) + wood + cushion
+    const frameWidth = 50; // Thick wooden frame to match outer border visual thickness
+    const innerHoleX = hole.x + frameWidth;
+    const innerHoleY = hole.y + frameWidth;
+    const innerHoleWidth = hole.width - frameWidth * 2;
+    const innerHoleHeight = hole.height - frameWidth * 2;
+
+    ctx.fillStyle = '#1a1a2e'; // Background color for hollow center
+    ctx.beginPath();
+    ctx.roundRect(innerHoleX, innerHoleY, innerHoleWidth, innerHoleHeight, holeRadius);
+    ctx.fill();
+
+    // Now draw inner hole cushion directly at hole edges
     ctx.fillStyle = '#0a5c2e';
     // Top cushion of hole - starts right at hole edge
     ctx.fillRect(hole.x, hole.y, hole.width, r);
