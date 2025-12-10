@@ -1358,12 +1358,14 @@ function getCanvasCoords(e) {
 
 // Input handling - Mouse
 canvas.addEventListener('mousedown', (e) => {
+    // Only respond to left button (button 0), ignore middle/right buttons
+    if (e.button !== 0) return;
     if (gameState !== 'aiming') return;
-    
+
     const coords = getCanvasCoords(e);
     const cueBall = getCueBall();
     if (!cueBall) return;
-    
+
     isDragging = true;
     dragStart = { x: cueBall.x, y: cueBall.y };
     dragEnd = coords;
@@ -1460,6 +1462,48 @@ document.addEventListener('keydown', (e) => {
         if (isDragging) {
             isDragging = false;
         }
+    }
+});
+
+// Middle mouse button panning (for navigating when zoomed in)
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let scrollStartX = 0;
+let scrollStartY = 0;
+
+document.addEventListener('mousedown', (e) => {
+    if (e.button === 1) { // Middle mouse button
+        e.preventDefault();
+        isPanning = true;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        scrollStartX = window.scrollX;
+        scrollStartY = window.scrollY;
+        document.body.style.cursor = 'grabbing';
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isPanning) {
+        e.preventDefault();
+        const deltaX = panStartX - e.clientX;
+        const deltaY = panStartY - e.clientY;
+        window.scrollTo(scrollStartX + deltaX, scrollStartY + deltaY);
+    }
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (e.button === 1 && isPanning) {
+        isPanning = false;
+        document.body.style.cursor = '';
+    }
+});
+
+// Prevent default middle click behavior (autoscroll)
+document.addEventListener('auxclick', (e) => {
+    if (e.button === 1) {
+        e.preventDefault();
     }
 });
 
