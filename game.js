@@ -1157,12 +1157,13 @@ function checkWallCollision(ball) {
             ball.vy = -ball.vy * 0.8;
         }
 
-        // Inner hole walls - ball bounces off the hole edges
-        // Check if ball is inside or near the hole boundaries
-        const holeLeft = hole.x + rail;
-        const holeRight = hole.x + hole.width - rail;
-        const holeTop = hole.y + rail;
-        const holeBottom = hole.y + hole.height - rail;
+        // Inner hole walls - ball bounces off the outer edge of cushions
+        // Cushions are drawn INSIDE hole starting at hole.x, thickness = r
+        // Collision happens at hole edge (where cushion meets felt)
+        const holeLeft = hole.x;
+        const holeRight = hole.x + hole.width;
+        const holeTop = hole.y;
+        const holeBottom = hole.y + hole.height;
 
         // Ball is in the vicinity of the hole
         if (ball.x + r > holeLeft && ball.x - r < holeRight &&
