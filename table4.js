@@ -241,7 +241,22 @@ function drawTable4(ctx, config) {
         );
     }
 
-    for (const diamond of outerDiamonds) {
+    // Filter out diamonds that are too close to pockets
+    const minDistanceFromPocket = config.pocketRadius + 15;
+    const filteredDiamonds = outerDiamonds.filter(diamond => {
+        for (const pocket of pockets) {
+            const dx = diamond.x - pocket.x;
+            const dy = diamond.y - pocket.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minDistanceFromPocket) {
+                return false; // Skip this diamond, too close to a pocket
+            }
+        }
+        return true; // Keep this diamond
+    });
+
+    // Draw filtered diamonds
+    for (const diamond of filteredDiamonds) {
         ctx.beginPath();
         ctx.arc(diamond.x, diamond.y, 3, 0, Math.PI * 2);
         ctx.fill();
