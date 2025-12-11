@@ -36,12 +36,12 @@ const CONFIG = {
     deadZone: 35  // Distance before power starts building (angle-only zone)
 };
 
-// Get current table configuration
+// Cache current table configuration for performance
+let currentConfig = CONFIG;
+
+// Get current table configuration (cached for performance)
 function getCurrentConfig() {
-    if (selectedTable === 'elongated') return TABLE2_CONFIG;
-    if (selectedTable === 'cross') return TABLE3_CONFIG;
-    if (selectedTable === 'donut') return TABLE4_CONFIG;
-    return CONFIG;
+    return currentConfig;
 }
 
 // Responsive scaling
@@ -125,6 +125,17 @@ let player2PocketedBalls = [];
 let debugMode = false;
 let activeTouchId = null;
 let gameInitialized = false;
+
+// Performance monitoring
+let performanceMode = false;
+let frameTimes = [];
+let frameIntervals = [];
+let lastFrameTime = performance.now();
+let fpsUpdateInterval = 500; // Update FPS display every 500ms
+let lastFpsUpdate = 0;
+let currentFps = 60;
+let avgFrameTime = 16.67;
+let avgFrameInterval = 16.67;
 
 // Menu canvas context
 let menuCtx = null;
@@ -423,6 +434,12 @@ tableAccordionHeader.addEventListener('click', toggleAccordion);
 function selectTable(tableType) {
     selectedTable = tableType;
 
+    // Update cached config for performance
+    if (tableType === 'elongated') currentConfig = TABLE2_CONFIG;
+    else if (tableType === 'cross') currentConfig = TABLE3_CONFIG;
+    else if (tableType === 'donut') currentConfig = TABLE4_CONFIG;
+    else currentConfig = CONFIG;
+
     // Update UI
     standardTableBtn.classList.toggle('active', tableType === 'standard');
     elongatedTableBtn.classList.toggle('active', tableType === 'elongated');
@@ -676,6 +693,10 @@ function drawTable() {
     ctx.setLineDash([]);
 }
 
+// Cached gradient for ball gloss effect (performance optimization)
+let cachedGlossGradient = null;
+let cachedGradientRadius = null;
+
 // Draw a ball
 function drawBall(ball) {
     const currentConfig = getCurrentConfig();
@@ -754,16 +775,24 @@ function drawBall(ball) {
     
     // Glossy highlight (fixed position - doesn't rotate)
     if (!ball.pocketing) {
-        const glossGradient = ctx.createRadialGradient(
-            ball.x - drawRadius * 0.3, ball.y - drawRadius * 0.3, 0,
-            ball.x - drawRadius * 0.3, ball.y - drawRadius * 0.3, drawRadius * 0.8
-        );
-        glossGradient.addColorStop(0, 'rgba(255,255,255,0.4)');
-        glossGradient.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = glossGradient;
+        // Cache gradient for performance - only recreate if radius changed
+        if (!cachedGlossGradient || cachedGradientRadius !== drawRadius) {
+            cachedGradientRadius = drawRadius;
+            cachedGlossGradient = ctx.createRadialGradient(
+                -drawRadius * 0.3, -drawRadius * 0.3, 0,
+                -drawRadius * 0.3, -drawRadius * 0.3, drawRadius * 0.8
+            );
+            cachedGlossGradient.addColorStop(0, 'rgba(255,255,255,0.4)');
+            cachedGlossGradient.addColorStop(1, 'rgba(255,255,255,0)');
+        }
+
+        ctx.save();
+        ctx.translate(ball.x, ball.y);
+        ctx.fillStyle = cachedGlossGradient;
         ctx.beginPath();
-        ctx.arc(ball.x, ball.y, drawRadius, 0, Math.PI * 2);
+        ctx.arc(0, 0, drawRadius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
     }
     
     // Darkness overlay for pocketing animation
@@ -1301,13 +1330,7 @@ function updatePocketedBallsDisplay() {
 function createMiniBall(ball) {
     const ballEl = document.createElement('div');
     ballEl.className = 'mini-ball' + (ball.stripe ? ' stripe' : '');
-
-    if (ball.stripe) {
-        // No more stripes - just show the color (this branch kept for safety)
-        ballEl.style.background = ball.color;
-    } else {
-        ballEl.style.background = ball.color;
-    }
+    ballEl.style.background = ball.color;
 
     const numEl = document.createElement('div');
     numEl.className = 'number';
@@ -1487,6 +1510,70 @@ function drawDebug() {
     ctx.fillText(`Pocket radius: ${currentConfig.pocketRadius}px`, currentConfig.tableWidth - 10, currentConfig.tableHeight - 70);
 }
 
+// Draw performance stats
+function drawPerformanceStats() {
+    if (!performanceMode) return;
+
+    const currentConfig = getCurrentConfig();
+
+    // Calculate min/max frame times
+    const minFrameTime = Math.min(...frameTimes);
+    const maxFrameTime = Math.max(...frameTimes);
+
+    // Performance overlay box
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(10, 10, 240, 150);
+
+    // Performance text
+    ctx.fillStyle = '#00ff00';
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('PERFORMANCE MONITOR', 20, 30);
+
+    // FPS display
+    ctx.font = 'bold 18px monospace';
+    let fpsColor = '#00ff00'; // Green
+    if (currentFps < 45) fpsColor = '#ffff00'; // Yellow
+    if (currentFps < 30) fpsColor = '#ff0000'; // Red
+
+    ctx.fillStyle = fpsColor;
+    ctx.fillText(`FPS: ${currentFps}`, 20, 55);
+
+    // Frame interval
+    ctx.font = '12px monospace';
+    ctx.fillStyle = '#aaaaaa';
+    ctx.fillText(`(${avgFrameInterval.toFixed(2)}ms/frame)`, 20, 70);
+
+    // Execution time
+    ctx.font = '14px monospace';
+    let execColor = '#00ff00'; // Green
+    if (avgFrameTime > 10) execColor = '#ffff00'; // Yellow
+    if (avgFrameTime > 16) execColor = '#ff0000'; // Red (can't keep up with 60fps)
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('Execution:', 20, 90);
+    ctx.fillStyle = execColor;
+    ctx.fillText(`${avgFrameTime.toFixed(2)}ms`, 110, 90);
+
+    // Min/Max execution times
+    ctx.fillStyle = '#999999';
+    ctx.font = '11px monospace';
+    ctx.fillText(`Min: ${minFrameTime.toFixed(2)}ms`, 20, 110);
+    ctx.fillText(`Max: ${maxFrameTime.toFixed(2)}ms`, 130, 110);
+
+    // CPU usage estimate
+    const cpuUsage = (avgFrameTime / avgFrameInterval) * 100;
+    ctx.fillStyle = '#cccccc';
+    ctx.fillText(`CPU: ${cpuUsage.toFixed(1)}%`, 20, 130);
+
+    ctx.fillStyle = '#777777';
+    ctx.font = '10px monospace';
+    ctx.fillText('Press P to toggle', 20, 148);
+
+    ctx.restore();
+}
+
 // Main draw function
 function draw() {
     const currentConfig = getCurrentConfig();
@@ -1504,10 +1591,47 @@ function draw() {
 
 // Game loop
 function gameLoop() {
+    // Performance monitoring
+    const frameStart = performance.now();
+
+    // Calculate time since last frame (actual FPS)
+    const frameInterval = frameStart - lastFrameTime;
+    frameIntervals.push(frameInterval);
+    lastFrameTime = frameStart;
+
     if (gameState !== 'menu') {
         updatePhysics();
         draw();
+        drawPerformanceStats();
     }
+
+    // Calculate execution time
+    const frameEnd = performance.now();
+    const frameTime = frameEnd - frameStart;
+    frameTimes.push(frameTime);
+
+    // Keep last 60 frames for averaging
+    if (frameTimes.length > 60) {
+        frameTimes.shift();
+    }
+    if (frameIntervals.length > 60) {
+        frameIntervals.shift();
+    }
+
+    // Update FPS every 500ms
+    if (frameEnd - lastFpsUpdate > fpsUpdateInterval) {
+        // Calculate actual FPS from frame intervals
+        const intervalSum = frameIntervals.reduce((a, b) => a + b, 0);
+        avgFrameInterval = intervalSum / frameIntervals.length;
+        currentFps = Math.round(1000 / avgFrameInterval);
+
+        // Calculate average execution time
+        const timeSum = frameTimes.reduce((a, b) => a + b, 0);
+        avgFrameTime = timeSum / frameTimes.length;
+
+        lastFpsUpdate = frameEnd;
+    }
+
     requestAnimationFrame(gameLoop);
 }
 
@@ -1637,6 +1761,9 @@ function shoot() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'x' || e.key === 'X') {
         debugMode = !debugMode;
+    }
+    if (e.key === 'p' || e.key === 'P') {
+        performanceMode = !performanceMode;
     }
     if (e.key === 'q' || e.key === 'Q') {
         if (isDragging) {
