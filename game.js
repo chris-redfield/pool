@@ -976,48 +976,73 @@ function drawAimingLine() {
     ctx.fillText('Power', 20, currentConfig.tableHeight - 35);
 }
 
-// Physics update
+// Physics update with sub-stepping to prevent tunneling
 function updatePhysics() {
     const currentConfig = getCurrentConfig();
     let allStopped = true;
 
+    // Calculate the number of sub-steps needed based on max velocity
+    // We want each sub-step to move balls no more than half the ball radius
+    const maxStepDistance = currentConfig.ballRadius * 0.5;
+    let maxVelocity = 0;
+
+    for (const ball of balls) {
+        const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+        if (speed > maxVelocity) maxVelocity = speed;
+    }
+
+    // Calculate sub-steps (minimum 1, cap at 4 for performance)
+    const numSubSteps = Math.min(4, Math.max(1, Math.ceil(maxVelocity / maxStepDistance)));
+    const dt = 1.0 / numSubSteps;
+
+    // Run physics in sub-steps
+    for (let step = 0; step < numSubSteps; step++) {
+        // Move balls by fractional velocity
+        for (const ball of balls) {
+            if (Math.abs(ball.vx) > currentConfig.minVelocity || Math.abs(ball.vy) > currentConfig.minVelocity) {
+                allStopped = false;
+
+                ball.x += ball.vx * dt;
+                ball.y += ball.vy * dt;
+
+                // Update rotation based on distance traveled (only on first sub-step to avoid over-counting)
+                if (step === 0) {
+                    const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
+                    ball.rotation += speed;
+                }
+            }
+
+            // Hard boundary
+            if (ball.x < 0) { ball.x = currentConfig.railSize + currentConfig.ballRadius; ball.vx = Math.abs(ball.vx) * 0.3; }
+            if (ball.x > currentConfig.tableWidth) { ball.x = currentConfig.tableWidth - currentConfig.railSize - currentConfig.ballRadius; ball.vx = -Math.abs(ball.vx) * 0.3; }
+            if (ball.y < 0) { ball.y = currentConfig.railSize + currentConfig.ballRadius; ball.vy = Math.abs(ball.vy) * 0.3; }
+            if (ball.y > currentConfig.tableHeight) { ball.y = currentConfig.tableHeight - currentConfig.railSize - currentConfig.ballRadius; ball.vy = -Math.abs(ball.vy) * 0.3; }
+        }
+
+        // Ball-to-ball collisions
+        for (let i = 0; i < balls.length; i++) {
+            for (let j = i + 1; j < balls.length; j++) {
+                checkBallCollision(balls[i], balls[j]);
+            }
+        }
+
+        // Wall collisions each sub-step
+        for (const ball of balls) {
+            checkWallCollision(ball);
+        }
+    }
+
+    // Apply friction once per frame (not per sub-step)
     for (const ball of balls) {
         if (Math.abs(ball.vx) > currentConfig.minVelocity || Math.abs(ball.vy) > currentConfig.minVelocity) {
-            allStopped = false;
-
-            ball.x += ball.vx;
-            ball.y += ball.vy;
-
-            // Update rotation based on distance traveled
-            const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
-            ball.rotation += speed;
-
             ball.vx *= currentConfig.friction;
             ball.vy *= currentConfig.friction;
 
             if (Math.abs(ball.vx) < currentConfig.minVelocity) ball.vx = 0;
             if (Math.abs(ball.vy) < currentConfig.minVelocity) ball.vy = 0;
         }
+    }
 
-        // Hard boundary
-        if (ball.x < 0) { ball.x = currentConfig.railSize + currentConfig.ballRadius; ball.vx = Math.abs(ball.vx) * 0.3; }
-        if (ball.x > currentConfig.tableWidth) { ball.x = currentConfig.tableWidth - currentConfig.railSize - currentConfig.ballRadius; ball.vx = -Math.abs(ball.vx) * 0.3; }
-        if (ball.y < 0) { ball.y = currentConfig.railSize + currentConfig.ballRadius; ball.vy = Math.abs(ball.vy) * 0.3; }
-        if (ball.y > currentConfig.tableHeight) { ball.y = currentConfig.tableHeight - currentConfig.railSize - currentConfig.ballRadius; ball.vy = -Math.abs(ball.vy) * 0.3; }
-    }
-    
-    // Ball-to-ball collisions
-    for (let i = 0; i < balls.length; i++) {
-        for (let j = i + 1; j < balls.length; j++) {
-            checkBallCollision(balls[i], balls[j]);
-        }
-    }
-    
-    // Wall collisions
-    for (const ball of balls) {
-        checkWallCollision(ball);
-    }
-    
     // Pocket detection - start pocketing animation
     for (const ball of balls) {
         if (ball.pocketing) continue; // Skip balls already being pocketed
