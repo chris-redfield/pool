@@ -93,7 +93,35 @@ body {
     justify-content: center;
 }
 
-#pocketedBallsContainer {
+.pocketed-display-dual {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.player-pocketed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 13px;
+    background: rgba(0,0,0,0.3);
+    padding: 8px 15px;
+    border-radius: 10px;
+    min-height: 45px;
+    flex-wrap: wrap;
+}
+
+.player-label {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+#pocketedBallsContainer,
+#player1PocketedContainer,
+#player2PocketedContainer {
     display: flex;
     gap: 4px;
     flex-wrap: wrap;

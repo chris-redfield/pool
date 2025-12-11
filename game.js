@@ -120,6 +120,8 @@ let gameState = 'menu'; // 'menu', 'aiming', 'moving', 'gameover'
 let gameMode = 'practice'; // 'practice', 'twoPlayer'
 let currentPlayerNumber = 1;
 let pocketedBalls = [];
+let player1PocketedBalls = [];
+let player2PocketedBalls = [];
 let debugMode = false;
 let activeTouchId = null;
 let gameInitialized = false;
@@ -495,21 +497,29 @@ function initBalls() {
     if (selectedTable === 'elongated') {
         balls = initBallsTable2(currentConfig);
         pocketedBalls = [];
+        player1PocketedBalls = [];
+        player2PocketedBalls = [];
         return;
     }
     if (selectedTable === 'cross') {
         balls = initBallsTable3(currentConfig);
         pocketedBalls = [];
+        player1PocketedBalls = [];
+        player2PocketedBalls = [];
         return;
     }
     if (selectedTable === 'donut') {
         balls = initBallsTable4(currentConfig);
         pocketedBalls = [];
+        player1PocketedBalls = [];
+        player2PocketedBalls = [];
         return;
     }
 
     balls = [];
     pocketedBalls = [];
+    player1PocketedBalls = [];
+    player2PocketedBalls = [];
 
     const startX = currentConfig.tableWidth * 0.3;
     const startY = currentConfig.tableHeight / 2;
@@ -943,7 +953,16 @@ function updatePhysics() {
         if (ball.pocketProgress >= 1) {
             const pocketedBall = balls.splice(i, 1)[0];
             if (pocketedBall.id !== 0) {
-                pocketedBalls.push(pocketedBall);
+                // Add to appropriate array based on game mode
+                if (gameMode === 'twoPlayer') {
+                    if (currentPlayerNumber === 1) {
+                        player1PocketedBalls.push(pocketedBall);
+                    } else {
+                        player2PocketedBalls.push(pocketedBall);
+                    }
+                } else {
+                    pocketedBalls.push(pocketedBall);
+                }
                 updatePocketedBallsDisplay();
             } else {
                 // Cue ball pocketed - respawn after delay
@@ -1240,27 +1259,62 @@ function checkPocket(ball) {
 
 // Update pocketed balls display
 function updatePocketedBallsDisplay() {
-    const container = document.getElementById('pocketedBallsContainer');
-    container.innerHTML = '';
-    
-    pocketedBalls.forEach(ball => {
-        const ballEl = document.createElement('div');
-        ballEl.className = 'mini-ball' + (ball.stripe ? ' stripe' : '');
-        
-        if (ball.stripe) {
-            // No more stripes - just show the color (this branch kept for safety)
-            ballEl.style.background = ball.color;
-        } else {
-            ballEl.style.background = ball.color;
-        }
-        
-        const numEl = document.createElement('div');
-        numEl.className = 'number';
-        numEl.textContent = ball.number;
-        ballEl.appendChild(numEl);
-        
-        container.appendChild(ballEl);
-    });
+    const practiceDisplay = document.getElementById('practicePocketedDisplay');
+    const twoPlayerDisplay = document.getElementById('twoPlayerPocketedDisplay');
+
+    if (gameMode === 'practice') {
+        // Show practice mode display
+        practiceDisplay.style.display = 'flex';
+        twoPlayerDisplay.style.display = 'none';
+
+        const container = document.getElementById('pocketedBallsContainer');
+        container.innerHTML = '';
+
+        pocketedBalls.forEach(ball => {
+            const ballEl = createMiniBall(ball);
+            container.appendChild(ballEl);
+        });
+    } else {
+        // Show 2-player mode displays
+        practiceDisplay.style.display = 'none';
+        twoPlayerDisplay.style.display = 'flex';
+
+        // Update Player 1 display
+        const player1Container = document.getElementById('player1PocketedContainer');
+        player1Container.innerHTML = '';
+        player1PocketedBalls.forEach(ball => {
+            const ballEl = createMiniBall(ball);
+            player1Container.appendChild(ballEl);
+        });
+
+        // Update Player 2 display
+        const player2Container = document.getElementById('player2PocketedContainer');
+        player2Container.innerHTML = '';
+        player2PocketedBalls.forEach(ball => {
+            const ballEl = createMiniBall(ball);
+            player2Container.appendChild(ballEl);
+        });
+    }
+}
+
+// Helper function to create a mini ball element
+function createMiniBall(ball) {
+    const ballEl = document.createElement('div');
+    ballEl.className = 'mini-ball' + (ball.stripe ? ' stripe' : '');
+
+    if (ball.stripe) {
+        // No more stripes - just show the color (this branch kept for safety)
+        ballEl.style.background = ball.color;
+    } else {
+        ballEl.style.background = ball.color;
+    }
+
+    const numEl = document.createElement('div');
+    numEl.className = 'number';
+    numEl.textContent = ball.number;
+    ballEl.appendChild(numEl);
+
+    return ballEl;
 }
 
 // Draw debug info
@@ -1659,6 +1713,7 @@ function initializeGame() {
     initPockets();
     initBalls();
     calculateResponsiveSize();
+    updatePocketedBallsDisplay();
     updateInstructions();
     window.addEventListener('resize', updateInstructions);
     // Resize listener for menu only - removed game resize to allow browser zoom to work

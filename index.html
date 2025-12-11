@@ -66,9 +66,22 @@
             <span id="status">Your turn - Aim and shoot!</span>
             <button class="back-btn" id="backToMenu">← Menu</button>
         </div>
-        <div class="pocketed-display">
+        <!-- Practice mode pocketed display -->
+        <div class="pocketed-display" id="practicePocketedDisplay">
             <span>Pocketed: </span>
             <div id="pocketedBallsContainer"></div>
+        </div>
+
+        <!-- 2-player mode pocketed displays -->
+        <div class="pocketed-display-dual" id="twoPlayerPocketedDisplay" style="display: none;">
+            <div class="player-pocketed">
+                <span class="player-label">Player 1: </span>
+                <div id="player1PocketedContainer"></div>
+            </div>
+            <div class="player-pocketed">
+                <span class="player-label">Player 2: </span>
+                <div id="player2PocketedContainer"></div>
+            </div>
         </div>
         <div class="zoom-controls">
             <button class="zoom-btn" id="zoomOut">−</button>
