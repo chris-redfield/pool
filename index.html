@@ -103,6 +103,29 @@
         </div>
     </div>
 
+    <!-- Game Over Screen -->
+    <div class="game-over-overlay" id="gameOverOverlay" style="display: none;">
+        <div class="game-over-content">
+            <h1 class="game-over-title">Game Over!</h1>
+            <div class="winner-announcement" id="winnerText"></div>
+            <div class="final-scores">
+                <div class="player-score">
+                    <span class="score-label">Player 1</span>
+                    <span class="score-value" id="player1FinalScore">0</span>
+                </div>
+                <div class="score-separator">-</div>
+                <div class="player-score">
+                    <span class="score-label">Player 2</span>
+                    <span class="score-value" id="player2FinalScore">0</span>
+                </div>
+            </div>
+            <div class="game-over-buttons">
+                <button class="game-over-btn rematch-btn" id="rematchBtn">Rematch</button>
+                <button class="game-over-btn menu-btn" id="gameOverMenuBtn">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
     <script src="table2.js"></script>
     <script src="table3.js"></script>
     <script src="table4.js"></script>

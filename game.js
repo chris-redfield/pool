@@ -122,6 +122,8 @@ let currentPlayerNumber = 1;
 let pocketedBalls = [];
 let player1PocketedBalls = [];
 let player2PocketedBalls = [];
+let ballPocketedThisTurn = false; // Track if current player pocketed a ball
+let foulCommitted = false; // Track if current player committed a foul
 let debugMode = false;
 let activeTouchId = null;
 let gameInitialized = false;
@@ -392,6 +394,8 @@ function resetGame() {
     updatePocketedBallsDisplay();
     gameState = 'aiming';
     currentPlayerNumber = 1;
+    ballPocketedThisTurn = false;
+    foulCommitted = false;
     document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
 }
 
@@ -411,12 +415,64 @@ function switchPlayer() {
     }
 }
 
-function updateStatusMessage() {
-    if (gameMode === 'practice') {
-        document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
+function updateStatusMessage(customMessage) {
+    const statusElement = document.getElementById('status');
+    if (customMessage) {
+        statusElement.textContent = customMessage;
+    } else if (gameMode === 'practice') {
+        statusElement.textContent = 'Your turn - Aim and shoot!';
     } else {
-        document.getElementById('status').textContent = 'Your turn - Aim and shoot!';
+        statusElement.textContent = 'Your turn - Aim and shoot!';
     }
+}
+
+// End game and show results
+function endGame() {
+    gameState = 'gameover';
+
+    // Calculate scores
+    const player1Score = player1PocketedBalls.length;
+    const player2Score = player2PocketedBalls.length;
+
+    // Determine winner
+    let winner;
+    if (player1Score > player2Score) {
+        winner = 1;
+    } else if (player2Score > player1Score) {
+        winner = 2;
+    } else {
+        winner = 0; // Tie
+    }
+
+    // Show game over screen
+    showGameOverScreen(player1Score, player2Score, winner);
+}
+
+// Show game over screen with scores and winner
+function showGameOverScreen(player1Score, player2Score, winner) {
+    const overlay = document.getElementById('gameOverOverlay');
+    const winnerText = document.getElementById('winnerText');
+    const player1ScoreEl = document.getElementById('player1FinalScore');
+    const player2ScoreEl = document.getElementById('player2FinalScore');
+
+    // Set scores
+    player1ScoreEl.textContent = player1Score;
+    player2ScoreEl.textContent = player2Score;
+
+    // Set winner announcement
+    if (winner === 0) {
+        winnerText.textContent = "It's a Tie!";
+    } else {
+        winnerText.textContent = `Player ${winner} Wins!`;
+    }
+
+    // Show overlay
+    overlay.style.display = 'flex';
+}
+
+// Hide game over screen
+function hideGameOverScreen() {
+    document.getElementById('gameOverOverlay').style.display = 'none';
 }
 
 // Accordion functionality
@@ -476,6 +532,20 @@ donutTableBtn.addEventListener('click', () => selectTable('donut'));
 twoPlayerBtn.addEventListener('click', () => startGame('twoPlayer'));
 practiceBtn.addEventListener('click', () => startGame('practice'));
 backToMenuBtn.addEventListener('click', showMenu);
+
+// Game over screen event listeners
+const rematchBtn = document.getElementById('rematchBtn');
+const gameOverMenuBtn = document.getElementById('gameOverMenuBtn');
+
+rematchBtn.addEventListener('click', () => {
+    hideGameOverScreen();
+    resetGame();
+});
+
+gameOverMenuBtn.addEventListener('click', () => {
+    hideGameOverScreen();
+    showMenu();
+});
 
 // Initialize pockets
 function initPockets() {
@@ -982,8 +1052,9 @@ function updatePhysics() {
         if (ball.pocketProgress >= 1) {
             const pocketedBall = balls.splice(i, 1)[0];
             if (pocketedBall.id !== 0) {
-                // Add to appropriate array based on game mode
+                // Regular ball pocketed
                 if (gameMode === 'twoPlayer') {
+                    ballPocketedThisTurn = true; // Player gets to continue turn
                     if (currentPlayerNumber === 1) {
                         player1PocketedBalls.push(pocketedBall);
                     } else {
@@ -994,7 +1065,11 @@ function updatePhysics() {
                 }
                 updatePocketedBallsDisplay();
             } else {
-                // Cue ball pocketed - respawn after delay
+                // Cue ball pocketed - FOUL!
+                if (gameMode === 'twoPlayer') {
+                    foulCommitted = true; // Player loses turn
+                }
+                // Respawn cue ball after delay
                 setTimeout(() => {
                     const config = getCurrentConfig();
                     balls.push({
@@ -1014,14 +1089,41 @@ function updatePhysics() {
     // Check if all balls stopped (including no pocketing animations in progress)
     const anyPocketing = balls.some(b => b.pocketing);
     if (gameState === 'moving' && allStopped && !anyPocketing) {
-        gameState = 'aiming';
-        
-        // Switch player in 2-player mode
+        // Check for win condition in 2-player mode
         if (gameMode === 'twoPlayer') {
-            switchPlayer();
+            const nonCueBalls = balls.filter(b => b.id !== 0);
+            if (nonCueBalls.length === 0) {
+                // All balls pocketed! Game over
+                endGame();
+                return;
+            }
         }
-        
-        updateStatusMessage();
+
+        gameState = 'aiming';
+
+        // Turn logic for 2-player mode
+        if (gameMode === 'twoPlayer') {
+            // If player committed a foul, always switch
+            if (foulCommitted) {
+                switchPlayer();
+                updateStatusMessage('Foul! Switching players...');
+            }
+            // If player pocketed a ball and didn't foul, they keep their turn
+            else if (ballPocketedThisTurn) {
+                updateStatusMessage('Nice shot! Shoot again!');
+            }
+            // Otherwise, switch to other player
+            else {
+                switchPlayer();
+                updateStatusMessage();
+            }
+
+            // Reset turn flags for next turn
+            ballPocketedThisTurn = false;
+            foulCommitted = false;
+        } else {
+            updateStatusMessage();
+        }
     }
 }
 
