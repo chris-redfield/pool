@@ -1797,6 +1797,12 @@ canvas.addEventListener('mousedown', (e) => {
     const cueBall = getCueBall();
     if (!cueBall) return;
 
+    // Only start aiming if click is near the cue ball
+    const currentConfig = getCurrentConfig();
+    const aimZoneRadius = currentConfig.ballRadius * 5;
+    const distToCueBall = Math.sqrt(Math.pow(coords.x - cueBall.x, 2) + Math.pow(coords.y - cueBall.y, 2));
+    if (distToCueBall > aimZoneRadius) return;
+
     isDragging = true;
     dragStart = { x: cueBall.x, y: cueBall.y };
     dragEnd = coords;
