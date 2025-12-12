@@ -1821,13 +1821,19 @@ document.addEventListener('mouseup', (e) => {
 canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length !== 1) return;
     if (gameState !== 'aiming') return;
-    
-    e.preventDefault();
-    
+
     const coords = getCanvasCoords(e);
     const cueBall = getCueBall();
     if (!cueBall) return;
-    
+
+    // Only start aiming if touch is near the cue ball (prevents accidental aims when panning)
+    const currentConfig = getCurrentConfig();
+    const aimZoneRadius = currentConfig.ballRadius * 5;
+    const distToCueBall = Math.sqrt(Math.pow(coords.x - cueBall.x, 2) + Math.pow(coords.y - cueBall.y, 2));
+    if (distToCueBall > aimZoneRadius) return;
+
+    e.preventDefault();
+
     activeTouchId = e.touches[0].identifier;
     isDragging = true;
     dragStart = { x: cueBall.x, y: cueBall.y };
