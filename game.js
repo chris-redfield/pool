@@ -1941,6 +1941,41 @@ document.addEventListener('auxclick', (e) => {
     }
 });
 
+// Two-finger touch panning for mobile (equivalent to middle-click panning on desktop)
+let isTouchPanning = false;
+let touchPanStartX = 0;
+let touchPanStartY = 0;
+let touchScrollStartX = 0;
+let touchScrollStartY = 0;
+
+document.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        isTouchPanning = true;
+        // Use the midpoint of the two fingers
+        touchPanStartX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        touchPanStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        touchScrollStartX = window.scrollX;
+        touchScrollStartY = window.scrollY;
+    }
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+    if (isTouchPanning && e.touches.length === 2) {
+        const currentX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const deltaX = touchPanStartX - currentX;
+        const deltaY = touchPanStartY - currentY;
+        window.scrollTo(touchScrollStartX + deltaX, touchScrollStartY + deltaY);
+    }
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+    // End panning when we no longer have 2 fingers
+    if (e.touches.length < 2) {
+        isTouchPanning = false;
+    }
+}, { passive: true });
+
 // Responsive resize
 // handleResize removed - was preventing browser zoom from working
 // Responsive sizing now only happens once on game initialization
